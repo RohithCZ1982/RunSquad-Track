@@ -26,10 +26,12 @@ services:
 
   - type: web
     name: runsquad-frontend
-    env: static
+    env: node
     plan: free
     buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/build
+    startCommand: cd frontend && node server.js
     envVars:
       - key: REACT_APP_API_URL
         value: https://runsquad-backend.onrender.com/api
+      - key: NODE_ENV
+        value: production

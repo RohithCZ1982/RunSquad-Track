@@ -43,9 +43,10 @@ function Auth() {
         
         if (savedToken && savedToken === cleanToken) {
           console.log('Token verified successfully. Redirecting...');
+          // Use React Router navigate instead of window.location for better reliability
           setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 100);
+            navigate('/dashboard', { replace: true });
+          }, 50);
         } else {
           setError('Failed to save authentication token. Please try again.');
         }
@@ -77,9 +78,10 @@ function Auth() {
         localStorage.setItem('token', cleanToken);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
+        // Use React Router navigate instead of window.location for better reliability
         setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
+          navigate('/dashboard', { replace: true });
+        }, 50);
       } else {
         setError('Registration failed: No token received.');
       }

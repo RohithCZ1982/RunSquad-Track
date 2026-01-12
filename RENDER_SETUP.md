@@ -40,7 +40,8 @@ Visit: https://dashboard.render.com
    - Auto-creates database tables on first run
 
 3. **Frontend Service** (`runsquad-frontend`)
-   - Static React site
+   - Node.js web service (serves React app with Express)
+   - Handles client-side routing properly
    - Automatically connects to backend
 
 ## 🗄️ Database Initialization
@@ -92,15 +93,22 @@ All these are set automatically:
 5. Click **Create Web Service**
 
 ### Frontend Service
-1. **New** → **Static Site**
+1. **New** → **Web Service** (⚠️ NOT Static Site - important for React Router!)
 2. Connect your GitHub repo
 3. Settings:
    - **Name**: `runsquad-frontend`
+   - **Environment**: `Node`
    - **Build Command**: `cd frontend && npm install && npm run build`
-   - **Publish Directory**: `frontend/build`
+   - **Start Command**: `cd frontend && node server.js`
 4. **Environment Variables**:
    - `REACT_APP_API_URL` → `https://runsquad-backend.onrender.com/api`
-5. Click **Create Static Site**
+   - `NODE_ENV` → `production`
+5. Click **Create Web Service**
+
+**⚠️ Important**: Use **Web Service**, not Static Site, because:
+- React Router needs server-side routing support
+- Static sites return 404 for routes like `/dashboard`
+- Web service with Express handles all routes correctly
 
 ## 🐛 Troubleshooting
 
