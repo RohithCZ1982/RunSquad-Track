@@ -8,7 +8,6 @@ services:
   - type: web
     name: runsquad-backend
     env: python
-    plan: free
     buildCommand: pip install -r backend/requirements.txt
     startCommand: gunicorn --chdir backend run:app --bind 0.0.0.0:$PORT
     envVars:
