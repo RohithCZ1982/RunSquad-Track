@@ -94,6 +94,15 @@ def create_app():
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response, 500
     
+    # Health check endpoint
+    @app.route('/')
+    @app.route('/health')
+    @app.route('/api/health')
+    def health_check():
+        response = jsonify({'status': 'ok', 'message': 'RunSquad API is running'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+    
     # Register blueprints
     from app.routes.auth import auth_bp
     from app.routes.clubs import clubs_bp

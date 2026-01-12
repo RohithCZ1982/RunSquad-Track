@@ -7,6 +7,10 @@ if (!API_URL.endsWith('/api')) {
   API_URL = API_URL.endsWith('/') ? API_URL + 'api' : API_URL + '/api';
 }
 
+// Log API URL for debugging (remove in production if needed)
+console.log('API Base URL:', API_URL);
+console.log('REACT_APP_API_URL env var:', process.env.REACT_APP_API_URL);
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
