@@ -13,7 +13,7 @@ function CreateClub({ onClose, onSuccess }) {
     setError('');
 
     try {
-      const response = await api.post('/clubs', { name, description, location });
+      await api.post('/clubs', { name, description, location });
       onSuccess();
     } catch (err) {
       console.error('Error creating club:', err);

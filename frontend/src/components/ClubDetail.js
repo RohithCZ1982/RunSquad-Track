@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import ScheduleRun from './ScheduleRun';
@@ -18,6 +18,24 @@ function ClubDetail() {
   const [deleteRunConfirm, setDeleteRunConfirm] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
 
+  const fetchClub = useCallback(async () => {
+    try {
+      const response = await api.get(`/clubs/${id}`);
+      setClub(response.data);
+    } catch (err) {
+      console.error('Error fetching club:', err);
+    }
+  }, [id]);
+
+  const fetchScheduledRuns = useCallback(async () => {
+    try {
+      const response = await api.get(`/runs/schedule/${id}`);
+      setScheduledRuns(response.data);
+    } catch (err) {
+      console.error('Error fetching scheduled runs:', err);
+    }
+  }, [id]);
+
   useEffect(() => {
     // Get current user from localStorage
     const storedUser = localStorage.getItem('user');
@@ -32,25 +50,7 @@ function ClubDetail() {
     
     fetchClub();
     fetchScheduledRuns();
-  }, [id]);
-
-  const fetchClub = async () => {
-    try {
-      const response = await api.get(`/clubs/${id}`);
-      setClub(response.data);
-    } catch (err) {
-      console.error('Error fetching club:', err);
-    }
-  };
-
-  const fetchScheduledRuns = async () => {
-    try {
-      const response = await api.get(`/runs/schedule/${id}`);
-      setScheduledRuns(response.data);
-    } catch (err) {
-      console.error('Error fetching scheduled runs:', err);
-    }
-  };
+  }, [id, fetchClub, fetchScheduledRuns]);
 
 
   const handleDeleteClub = async () => {

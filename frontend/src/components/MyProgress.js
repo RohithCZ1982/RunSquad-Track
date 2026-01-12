@@ -13,7 +13,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import './MyProgress.css';
 
 ChartJS.register(
@@ -358,9 +358,6 @@ function MyProgress() {
   });
 
   const getPerformanceChartOptions = () => {
-    const performanceInfo = getPerformanceInfo();
-    const isImproving = performanceInfo?.isImproving ?? true;
-    
     return {
       responsive: true,
       maintainAspectRatio: false,

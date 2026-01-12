@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import './ActivityFeed.css';
 
@@ -16,6 +16,15 @@ function ActivityFeed({ clubId }) {
   const [editingActivity, setEditingActivity] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
+  const fetchActivities = useCallback(async () => {
+    try {
+      const response = await api.get(`/users/activity-feed/${clubId}`);
+      setActivities(response.data);
+    } catch (err) {
+      console.error('Error fetching activities:', err);
+    }
+  }, [clubId]);
+
   useEffect(() => {
     // Get current user from localStorage
     const storedUser = localStorage.getItem('user');
@@ -31,16 +40,7 @@ function ActivityFeed({ clubId }) {
     fetchActivities();
     const interval = setInterval(fetchActivities, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [clubId]);
-
-  const fetchActivities = async () => {
-    try {
-      const response = await api.get(`/users/activity-feed/${clubId}`);
-      setActivities(response.data);
-    } catch (err) {
-      console.error('Error fetching activities:', err);
-    }
-  };
+  }, [clubId, fetchActivities]);
 
   const handleManualTrack = async (e) => {
     e.preventDefault();

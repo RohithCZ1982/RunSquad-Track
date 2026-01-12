@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import CreateClub from './CreateClub';
@@ -11,29 +11,7 @@ function Dashboard() {
   const [clubs, setClubs] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      console.log('No token found in Dashboard, redirecting to login...');
-      navigate('/login', { replace: true });
-      return;
-    }
-    
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
-    }
-    
-    fetchClubs();
-  }, [navigate]);
-
-  const fetchClubs = async () => {
+  const fetchClubs = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -73,7 +51,29 @@ function Dashboard() {
         console.error('Network error - check if backend is running');
       }
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.log('No token found in Dashboard, redirecting to login...');
+      navigate('/login', { replace: true });
+      return;
+    }
+    
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
+    fetchClubs();
+  }, [navigate, fetchClubs]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
