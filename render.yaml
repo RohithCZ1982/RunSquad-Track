@@ -1,5 +1,5 @@
 services:
-  - type: pspg
+  - type: postgres
     name: runsquad-db
     plan: starter
     databaseName: runsquad
