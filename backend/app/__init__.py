@@ -12,46 +12,25 @@ def create_app():
     db.init_app(app)
     jwt = JWTManager(app)
     
-    # CORS configuration - MUST handle preflight requests properly
-    from flask_cors import cross_origin
-    
-    # Handle OPTIONS requests globally for all /api/* routes
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = jsonify({})
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,X-Requested-With")
-            response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS,PATCH")
-            response.headers.add('Access-Control-Max-Age', "3600")
-            return response, 200
-    
-    # CORS configuration - allow all origins for now
+    # CORS configuration - Flask-CORS handles all CORS headers automatically
+    # Configure it to allow all origins and handle preflight requests
     CORS(app, 
          resources={r"/api/*": {
              "origins": "*",  # Allow all origins
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
              "expose_headers": ["Content-Type"],
-             "supports_credentials": True,
+             "supports_credentials": False,  # Set to False when using wildcard origin
              "max_age": 3600
          }},
-         supports_credentials=True,
-         automatic_options=True)
+         supports_credentials=False,  # Must be False with wildcard origin
+         automatic_options=True)  # Automatically handle OPTIONS requests
     
-    # Also add CORS headers to all routes as a fallback
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
-        return response
-    
-    # JWT error handlers - must return CORS-compatible responses
+    # JWT error handlers - Flask-CORS will add headers automatically
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         response = jsonify({'error': 'Token has expired', 'code': 'TOKEN_EXPIRED'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        # Flask-CORS will add headers automatically
         return response, 401
     
     @jwt.invalid_token_loader
@@ -76,22 +55,20 @@ def create_app():
             'code': 'INVALID_TOKEN',
             'hint': 'Please log in again to get a new token'
         })
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        # Flask-CORS will add headers automatically
         return response, 422
     
     @jwt.unauthorized_loader
     def missing_token_callback(error):
         response = jsonify({'error': 'Authorization token is missing', 'code': 'MISSING_TOKEN'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        # Flask-CORS will add headers automatically
         return response, 401
     
-    # Error handler for 500 errors to include CORS headers
+    # Error handler for 500 errors - Flask-CORS will add headers automatically
     @app.errorhandler(500)
     def handle_500_error(e):
         response = jsonify({'error': 'Internal server error', 'details': str(e)})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        # Flask-CORS will add headers automatically
         return response, 500
     
     # Health check endpoint
@@ -110,7 +87,7 @@ def create_app():
                 'users': '/api/users'
             }
         })
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        # Flask-CORS will add headers automatically
         return response, 200
     
     # Register blueprints
