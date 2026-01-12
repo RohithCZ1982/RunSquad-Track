@@ -137,6 +137,9 @@ function Auth() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   required
                 />
               </div>
@@ -147,6 +150,7 @@ function Auth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -167,6 +171,8 @@ function Auth() {
                   placeholder="John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  autoCapitalize="words"
                   required
                 />
               </div>
@@ -177,6 +183,9 @@ function Auth() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   required
                 />
               </div>
@@ -187,6 +196,7 @@ function Auth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   required
                 />
               </div>
