@@ -1,10 +1,9 @@
-services:
-  - type: postgres
-    name: runsquad-db
-    plan: starter
+databases:
+  - name: runsquad-db
     databaseName: runsquad
     user: runsquad_user
 
+services:
   - type: web
     name: runsquad-backend
     env: python
