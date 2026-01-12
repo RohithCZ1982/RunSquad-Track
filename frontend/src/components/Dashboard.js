@@ -91,11 +91,13 @@ function Dashboard() {
       </div>
 
       <header className="dashboard-header">
-        <h1>RunSquad</h1>
-        <div className="header-actions">
-          <span>Welcome, {user?.name}</span>
-          <button onClick={() => navigate('/progress')}>My Progress</button>
-          <button onClick={handleLogout}>Logout</button>
+        <div className="header-top">
+          <h1>RunSquad</h1>
+        </div>
+        <div className="header-bottom">
+          <span className="user-name">{user?.name || 'User'}</span>
+          <button onClick={() => navigate('/progress')} className="header-button">My Progress</button>
+          <button onClick={handleLogout} className="header-button">Logout</button>
         </div>
       </header>
 
