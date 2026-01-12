@@ -2,6 +2,7 @@ databases:
   - name: runsquad-db
     databaseName: runsquad
     user: runsquad_user
+    plan: free   # ✅ REQUIRED for free tier
 
 services:
   - type: web
@@ -9,7 +10,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && gunicorn --bind 0.0.0.0:$PORT run:app
+    startCommand: gunicorn --chdir backend run:app --bind 0.0.0.0:$PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -25,10 +26,9 @@ services:
   - type: web
     name: runsquad-frontend
     env: static
+    plan: free
     buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/build
-    # Note: REACT_APP_API_URL needs to be set manually after backend is deployed
-    # Format: https://runsquad-backend.onrender.com/api
+    staticPublishPath: frontend/build
     envVars:
       - key: REACT_APP_API_URL
         sync: false
