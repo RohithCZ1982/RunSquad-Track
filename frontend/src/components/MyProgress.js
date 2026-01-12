@@ -358,6 +358,7 @@ function MyProgress() {
   });
 
   const getPerformanceChartOptions = () => {
+    const performanceInfo = getPerformanceInfo();
     return {
       responsive: true,
       maintainAspectRatio: false,
