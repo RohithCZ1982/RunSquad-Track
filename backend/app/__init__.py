@@ -97,22 +97,43 @@ def create_app():
     # Health check endpoint
     @app.route('/')
     @app.route('/health')
+    @app.route('/api')
     @app.route('/api/health')
     def health_check():
-        response = jsonify({'status': 'ok', 'message': 'RunSquad API is running'})
+        response = jsonify({
+            'status': 'ok', 
+            'message': 'RunSquad API is running',
+            'endpoints': {
+                'auth': '/api/auth',
+                'clubs': '/api/clubs',
+                'runs': '/api/runs',
+                'users': '/api/users'
+            }
+        })
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 200
     
     # Register blueprints
-    from app.routes.auth import auth_bp
-    from app.routes.clubs import clubs_bp
-    from app.routes.runs import runs_bp
-    from app.routes.users import users_bp
-    
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(clubs_bp, url_prefix='/api/clubs')
-    app.register_blueprint(runs_bp, url_prefix='/api/runs')
-    app.register_blueprint(users_bp, url_prefix='/api/users')
+    try:
+        from app.routes.auth import auth_bp
+        from app.routes.clubs import clubs_bp
+        from app.routes.runs import runs_bp
+        from app.routes.users import users_bp
+        
+        app.register_blueprint(auth_bp, url_prefix='/api/auth')
+        app.register_blueprint(clubs_bp, url_prefix='/api/clubs')
+        app.register_blueprint(runs_bp, url_prefix='/api/runs')
+        app.register_blueprint(users_bp, url_prefix='/api/users')
+        
+        print("✅ All blueprints registered successfully")
+        print("Registered routes:")
+        for rule in app.url_map.iter_rules():
+            print(f"  {rule.rule} -> {rule.endpoint}")
+    except Exception as e:
+        print(f"❌ Error registering blueprints: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
     
     with app.app_context():
         db.create_all()

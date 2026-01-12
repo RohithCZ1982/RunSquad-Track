@@ -12,20 +12,23 @@
 
 ### Step 2: Test Backend Health Endpoint
 
-Open in browser or use curl:
+Open in browser:
 ```
+https://runsquad-backend.onrender.com
+https://runsquad-backend.onrender.com/api
 https://runsquad-backend.onrender.com/api/health
 ```
 
 **Expected Response:**
 ```json
-{"status": "ok", "message": "RunSquad API is running"}
+{"status": "ok", "message": "RunSquad API is running", "endpoints": {...}}
 ```
 
 **If 404:**
 - Backend might not be running
 - Check logs for errors
 - Verify gunicorn command is correct
+- Check logs for "✅ All blueprints registered successfully"
 
 **If 200:**
 - Backend is running, check frontend API URL

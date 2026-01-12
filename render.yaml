@@ -9,7 +9,7 @@ services:
     name: runsquad-backend
     env: python
     buildCommand: cd backend && pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: gunicorn --chdir backend run:app --bind 0.0.0.0:$PORT
+    startCommand: gunicorn --chdir backend --pythonpath . run:app --bind 0.0.0.0:$PORT --timeout 120 --access-logfile - --error-logfile -
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -32,8 +32,4 @@ services:
     staticPublishPath: frontend/build
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          type: web
-          name: runsquad-backend
-          property: host
-        transform: https://${host}/api
+        value: https://runsquad-backend.onrender.com/api
