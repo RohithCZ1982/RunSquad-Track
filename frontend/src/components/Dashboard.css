@@ -55,9 +55,10 @@
   margin: 0;
 }
 
-.dashboard-header h1::before {
-  content: '🏃';
-  font-size: 28px;
+.waveform-icon {
+  width: 32px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .header-bottom {

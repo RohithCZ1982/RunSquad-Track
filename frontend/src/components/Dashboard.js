@@ -92,7 +92,19 @@ function Dashboard() {
 
       <header className="dashboard-header">
         <div className="header-top">
-          <h1>RunSquad</h1>
+          <h1>
+            <svg className="waveform-icon" viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
+              <path 
+                d="M 0 20 L 15 20 L 20 5 L 25 35 L 30 10 L 35 30 L 40 15 L 45 25 L 50 20 L 100 20" 
+                stroke="#3b82f6" 
+                strokeWidth="4" 
+                fill="none" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
+            RunSquad
+          </h1>
         </div>
         <div className="header-bottom">
           <span className="user-name">{user?.name || 'User'}</span>

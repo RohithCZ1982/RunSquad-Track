@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
+import GPSTracker from './GPSTracker';
 import './ActivityFeed.css';
 
 function ActivityFeed({ clubId }) {
@@ -83,13 +84,23 @@ function ActivityFeed({ clubId }) {
   };
 
   const handleGPSTrack = () => {
-    // Placeholder for GPS tracking (similar to AllTrails)
-    // This would require geolocation API and real-time tracking
     setShowGPSTracker(true);
     setShowTrackOptions(false);
-    
-    // For now, show a message that GPS tracking is coming soon
-    alert('GPS tracking feature coming soon! This will allow you to track your run in real-time using your device\'s GPS.');
+  };
+
+  const handleGPSSave = async (runData) => {
+    try {
+      await api.post('/runs/track', runData);
+      setShowGPSTracker(false);
+      fetchActivities();
+    } catch (err) {
+      console.error('Error saving GPS run:', err);
+      throw err; // Re-throw so GPSTracker can handle it
+    }
+  };
+
+  const handleGPSCancel = () => {
+    setShowGPSTracker(false);
   };
 
   const handleEditActivity = (activity) => {
@@ -316,25 +327,11 @@ function ActivityFeed({ clubId }) {
       {showGPSTracker && (
         <div className="modal-overlay" onClick={() => setShowGPSTracker(false)}>
           <div className="gps-tracker-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>GPS Run Tracker</h2>
-            <div className="gps-placeholder">
-              <div className="gps-icon">📍</div>
-              <h3>GPS Tracking Coming Soon</h3>
-              <p>This feature will allow you to track your run in real-time using your device's GPS, similar to AllTrails.</p>
-              <p>Features will include:</p>
-              <ul>
-                <li>Real-time distance tracking</li>
-                <li>Route mapping</li>
-                <li>Pace monitoring</li>
-                <li>Automatic time tracking</li>
-              </ul>
-              <button 
-                className="close-button"
-                onClick={() => setShowGPSTracker(false)}
-              >
-                Close
-              </button>
-            </div>
+            <GPSTracker
+              clubId={clubId}
+              onSave={handleGPSSave}
+              onCancel={handleGPSCancel}
+            />
           </div>
         </div>
       )}
