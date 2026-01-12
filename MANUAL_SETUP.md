@@ -90,7 +90,11 @@ This guide will help you set up the RunSquad backend and frontend manually on Re
    |-----|-------|
    | `REACT_APP_API_URL` | `https://runsquad-backend.onrender.com/api` |
    
-   ⚠️ **Important**: Replace `runsquad-backend` with your actual backend service name if different!
+   ⚠️ **CRITICAL**: 
+   - Replace `runsquad-backend` with your actual backend service name
+   - **MUST end with `/api`** (the frontend code expects this)
+   - Example: `https://YOUR-BACKEND-NAME.onrender.com/api`
+   - After setting this, you **MUST rebuild** the frontend for it to take effect
    
 6. Click **"Create Static Site"**
 7. **Wait for deployment** (takes 3-5 minutes)

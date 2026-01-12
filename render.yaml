@@ -32,4 +32,8 @@ services:
     staticPublishPath: frontend/build
     envVars:
       - key: REACT_APP_API_URL
-        sync: false
+        fromService:
+          type: web
+          name: runsquad-backend
+          property: host
+        transform: https://${host}/api

@@ -26,9 +26,10 @@ def create_app():
             response.headers.add('Access-Control-Max-Age', "3600")
             return response, 200
     
+    # CORS configuration - allow all origins for now
     CORS(app, 
          resources={r"/api/*": {
-             "origins": "*",
+             "origins": "*",  # Allow all origins
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
              "expose_headers": ["Content-Type"],
@@ -37,6 +38,14 @@ def create_app():
          }},
          supports_credentials=True,
          automatic_options=True)
+    
+    # Also add CORS headers to all routes as a fallback
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+        return response
     
     # JWT error handlers - must return CORS-compatible responses
     @jwt.expired_token_loader
