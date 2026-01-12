@@ -10,16 +10,28 @@ function ClubDetail() {
   const navigate = useNavigate();
   const [club, setClub] = useState(null);
   const [scheduledRuns, setScheduledRuns] = useState([]);
-  const [todayStats, setTodayStats] = useState({ totalDistance: 0, activeRunners: 0, runners: [] });
   const [showScheduleRun, setShowScheduleRun] = useState(false);
+  const [editingRun, setEditingRun] = useState(null);
   const [activeTab, setActiveTab] = useState('scheduled');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteRunConfirm, setDeleteRunConfirm] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    // Get current user from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setCurrentUser(userData);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
     fetchClub();
     fetchScheduledRuns();
-    fetchTodayStats();
   }, [id]);
 
   const fetchClub = async () => {
@@ -40,81 +52,6 @@ function ClubDetail() {
     }
   };
 
-  const fetchTodayStats = async () => {
-    try {
-      // Fetch activity feed to get today's activities
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      try {
-        const activitiesResponse = await api.get(`/users/activity-feed/${id}`);
-        const activities = activitiesResponse.data || [];
-        
-        // Filter today's run activities
-        const todayActivities = activities.filter(activity => {
-          if (activity.activity_type !== 'run') return false;
-          const activityDate = new Date(activity.created_at);
-          return activityDate >= today;
-        });
-
-        // Extract run data from activity descriptions
-        let totalDistance = 0;
-        const runnersMap = new Map();
-
-        todayActivities.forEach(activity => {
-          // Parse description like "John ran 5.2 km at 10.5 km/h"
-          const match = activity.description.match(/(\w+)\s+ran\s+([\d.]+)\s+km\s+at\s+([\d.]+)\s+km\/h/);
-          if (match) {
-            const [, name, distance, speed] = match;
-            const distanceNum = parseFloat(distance);
-            const speedNum = parseFloat(speed);
-            const pace = (60 / speedNum).toFixed(1); // Convert km/h to min/km
-            
-            totalDistance += distanceNum;
-            
-            if (runnersMap.has(activity.user_id)) {
-              const existing = runnersMap.get(activity.user_id);
-              existing.distance += distanceNum;
-              existing.runs += 1;
-            } else {
-              runnersMap.set(activity.user_id, {
-                id: activity.user_id,
-                name: name,
-                distance: distanceNum,
-                runs: 1,
-                avgPace: pace
-              });
-            }
-          }
-        });
-
-        setTodayStats({
-          totalDistance: totalDistance.toFixed(1),
-          activeRunners: runnersMap.size,
-          runners: Array.from(runnersMap.values()).sort((a, b) => b.distance - a.distance)
-        });
-      } catch (err) {
-        // If activity feed fails, set default values
-        console.log('Could not fetch activity feed for stats:', err);
-        setTodayStats({ totalDistance: '0', activeRunners: 0, runners: [] });
-      }
-    } catch (err) {
-      console.error('Error fetching today stats:', err);
-      setTodayStats({ totalDistance: '0', activeRunners: 0, runners: [] });
-    }
-  };
-
-  useEffect(() => {
-    if (club) {
-      fetchTodayStats();
-    }
-  }, [club]);
-
-  const getTodayDate = () => {
-    const today = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    return today.toLocaleDateString('en-US', options);
-  };
 
   const handleDeleteClub = async () => {
     setIsDeleting(true);
@@ -127,6 +64,24 @@ function ClubDetail() {
       alert(err.response?.data?.error || 'Failed to delete club');
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleEditScheduledRun = (run) => {
+    setEditingRun(run);
+    setShowScheduleRun(true);
+  };
+
+  const handleDeleteScheduledRun = async () => {
+    if (!deleteRunConfirm) return;
+
+    try {
+      await api.delete(`/runs/schedule/${deleteRunConfirm.id}`);
+      setDeleteRunConfirm(null);
+      fetchScheduledRuns();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete scheduled run');
+      setDeleteRunConfirm(null);
     }
   };
 
@@ -192,6 +147,27 @@ function ClubDetail() {
         </div>
       )}
 
+      {deleteRunConfirm && (
+        <div className="modal-overlay" onClick={() => setDeleteRunConfirm(null)}>
+          <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete Scheduled Run</h2>
+            <p>Are you sure you want to delete this scheduled run?</p>
+            <div className="run-preview">
+              <p><strong>Title:</strong> {deleteRunConfirm.title}</p>
+              <p><strong>Date:</strong> {new Date(deleteRunConfirm.scheduled_date).toLocaleString()}</p>
+              {deleteRunConfirm.location && <p><strong>Location:</strong> {deleteRunConfirm.location}</p>}
+            </div>
+            <p className="warning-text">This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button type="button" onClick={() => setDeleteRunConfirm(null)}>Cancel</button>
+              <button type="button" onClick={handleDeleteScheduledRun} className="delete-confirm-button">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="club-info-section">
         <div className="club-meta-info">
           {club.location && (
@@ -205,46 +181,6 @@ function ClubDetail() {
             <span>{club.member_count} members</span>
           </div>
         </div>
-      </div>
-
-      <div className="running-report-card">
-        <div className="report-header">
-          <div className="report-title">
-            <span className="report-icon">📊</span>
-            <h2>Today's Running Report</h2>
-          </div>
-          <p className="report-date">{getTodayDate()}</p>
-        </div>
-        <div className="report-stats">
-          <div className="stat-box">
-            <p className="stat-label">Total Distance Today</p>
-            <p className="stat-value">{todayStats.totalDistance} km</p>
-          </div>
-          <div className="stat-box">
-            <p className="stat-label">Active Runners</p>
-            <p className="stat-value">{todayStats.activeRunners}</p>
-          </div>
-        </div>
-        {todayStats.runners.length > 0 && (
-          <div className="today-runners">
-            <h4>Today's Runners</h4>
-            <div className="runners-list">
-              {todayStats.runners.map((runner, index) => (
-                <div key={runner.id} className="runner-item">
-                  <div className="runner-rank">#{index + 1}</div>
-                  <div className="runner-info">
-                    <p className="runner-name">{runner.name}</p>
-                    <p className="runner-details">{runner.runs} runs • {runner.avgPace} min/km pace</p>
-                  </div>
-                  <div className="runner-stats">
-                    <p className="runner-distance">{runner.distance} km</p>
-                    <p className="runner-time">~{Math.round(runner.distance * parseFloat(runner.avgPace))} min</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="tabs-container">
@@ -283,9 +219,14 @@ function ClubDetail() {
               {showScheduleRun && (
                 <ScheduleRun
                   clubId={id}
-                  onClose={() => setShowScheduleRun(false)}
+                  initialRun={editingRun}
+                  onClose={() => {
+                    setShowScheduleRun(false);
+                    setEditingRun(null);
+                  }}
                   onSuccess={() => {
                     setShowScheduleRun(false);
+                    setEditingRun(null);
                     fetchScheduledRuns();
                   }}
                 />
@@ -300,8 +241,30 @@ function ClubDetail() {
                 ) : (
                   scheduledRuns.map((run) => (
                     <div key={run.id} className="scheduled-run-card">
-                      <h3>{run.title}</h3>
-                      {run.description && <p className="run-description">{run.description}</p>}
+                      <div className="run-card-header">
+                        <div>
+                          <h3>{run.title}</h3>
+                          {run.description && <p className="run-description">{run.description}</p>}
+                        </div>
+                        {currentUser && currentUser.id === run.created_by?.id && (
+                          <div className="run-card-actions">
+                            <button 
+                              className="edit-run-button"
+                              onClick={() => handleEditScheduledRun(run)}
+                              title="Edit scheduled run"
+                            >
+                              ✏️
+                            </button>
+                            <button 
+                              className="delete-run-button"
+                              onClick={() => setDeleteRunConfirm(run)}
+                              title="Delete scheduled run"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <div className="run-details">
                         <p>📅 {new Date(run.scheduled_date).toLocaleString()}</p>
                         {run.location && <p>📍 {run.location}</p>}

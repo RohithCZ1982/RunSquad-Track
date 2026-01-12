@@ -12,8 +12,22 @@ function ActivityFeed({ clubId }) {
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState('');
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   useEffect(() => {
+    // Get current user from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setCurrentUser(userData);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
     fetchActivities();
     const interval = setInterval(fetchActivities, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
@@ -78,6 +92,90 @@ function ActivityFeed({ clubId }) {
     alert('GPS tracking feature coming soon! This will allow you to track your run in real-time using your device\'s GPS.');
   };
 
+  const handleEditActivity = (activity) => {
+    setEditingActivity(activity);
+    if (activity.run_data) {
+      setDistance(activity.run_data.distance_km.toString());
+      setDuration(activity.run_data.duration_minutes.toString());
+      setNotes(activity.run_data.notes || '');
+      
+      // Format date for datetime-local input
+      const runDate = new Date(activity.run_data.date);
+      const year = runDate.getFullYear();
+      const month = String(runDate.getMonth() + 1).padStart(2, '0');
+      const day = String(runDate.getDate()).padStart(2, '0');
+      const hours = String(runDate.getHours()).padStart(2, '0');
+      const minutes = String(runDate.getMinutes()).padStart(2, '0');
+      setDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    }
+    setShowManualForm(true);
+  };
+
+  const handleUpdateActivity = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!distance || !duration) {
+      setError('Distance and duration are required');
+      return;
+    }
+
+    try {
+      let formattedDate = date;
+      if (date) {
+        formattedDate = new Date(date).toISOString();
+      }
+
+      // Update the activity (which will update the underlying run)
+      await api.put(`/users/activities/${editingActivity.id}`, {
+        run_data: {
+          distance_km: parseFloat(distance),
+          duration_minutes: parseFloat(duration),
+          notes: notes || undefined,
+          date: formattedDate || undefined
+        }
+      });
+
+      // Reset form
+      setDistance('');
+      setDuration('');
+      setNotes('');
+      setDate('');
+      setShowManualForm(false);
+      setEditingActivity(null);
+      setShowTrackOptions(false);
+      
+      // Refresh activities
+      fetchActivities();
+    } catch (err) {
+      console.error('Error updating activity:', err);
+      setError(err.response?.data?.error || 'Failed to update activity');
+    }
+  };
+
+  const handleDeleteActivity = async () => {
+    if (!showDeleteConfirm) return;
+
+    try {
+      await api.delete(`/users/activities/${showDeleteConfirm.id}`);
+      setShowDeleteConfirm(null);
+      fetchActivities();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete activity');
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const handleCancelForm = () => {
+    setShowManualForm(false);
+    setEditingActivity(null);
+    setDistance('');
+    setDuration('');
+    setNotes('');
+    setDate('');
+    setError('');
+  };
+
   return (
     <div className="activity-feed">
       <div className="activity-feed-header">
@@ -131,11 +229,11 @@ function ActivityFeed({ clubId }) {
       )}
 
       {showManualForm && (
-        <div className="modal-overlay" onClick={() => setShowManualForm(false)}>
+        <div className="modal-overlay" onClick={handleCancelForm}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Track Run Manually</h2>
+            <h2>{editingActivity ? 'Edit Run' : 'Track Run Manually'}</h2>
             {error && <div className="error-message">{error}</div>}
-            <form onSubmit={handleManualTrack}>
+            <form onSubmit={editingActivity ? handleUpdateActivity : handleManualTrack}>
               <div className="form-group">
                 <label>Distance (km) *</label>
                 <input
@@ -181,20 +279,36 @@ function ActivityFeed({ clubId }) {
               <div className="modal-actions">
                 <button 
                   type="button" 
-                  onClick={() => {
-                    setShowManualForm(false);
-                    setDistance('');
-                    setDuration('');
-                    setNotes('');
-                    setDate('');
-                    setError('');
-                  }}
+                  onClick={handleCancelForm}
                 >
                   Cancel
                 </button>
-                <button type="submit">Save Run</button>
+                <button type="submit">{editingActivity ? 'Update' : 'Save Run'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete Activity</h2>
+            <p>Are you sure you want to delete this activity?</p>
+            <div className="activity-preview">
+              <p><strong>{showDeleteConfirm.user_name}</strong></p>
+              <p>{showDeleteConfirm.description}</p>
+              <p className="activity-time-preview">
+                {new Date(showDeleteConfirm.created_at).toLocaleString()}
+              </p>
+            </div>
+            <p className="warning-text">This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button type="button" onClick={() => setShowDeleteConfirm(null)}>Cancel</button>
+              <button type="button" onClick={handleDeleteActivity} className="delete-confirm-button">
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -239,8 +353,28 @@ function ActivityFeed({ clubId }) {
                 <strong>{activity.user_name}</strong>
                 <span> {activity.description}</span>
               </div>
-              <div className="activity-time">
-                {new Date(activity.created_at).toLocaleString()}
+              <div className="activity-footer">
+                <div className="activity-time">
+                  {new Date(activity.created_at).toLocaleString()}
+                </div>
+                {currentUser && currentUser.id === activity.user_id && (
+                  <div className="activity-actions">
+                    <button 
+                      className="edit-activity-button"
+                      onClick={() => handleEditActivity(activity)}
+                      title="Edit activity"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      className="delete-activity-button"
+                      onClick={() => setShowDeleteConfirm(activity)}
+                      title="Delete activity"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))

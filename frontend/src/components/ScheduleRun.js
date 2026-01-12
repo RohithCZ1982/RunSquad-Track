@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import './ScheduleRun.css';
 
-function ScheduleRun({ clubId, onClose, onSuccess }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
+  const [title, setTitle] = useState(initialRun?.title || '');
+  const [description, setDescription] = useState(initialRun?.description || '');
   const [scheduledDate, setScheduledDate] = useState('');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState(initialRun?.location || '');
   const [error, setError] = useState('');
+
+  // Set initial date when editing
+  useEffect(() => {
+    if (initialRun && initialRun.scheduled_date) {
+      const date = new Date(initialRun.scheduled_date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    }
+  }, [initialRun]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,23 +34,25 @@ function ScheduleRun({ clubId, onClose, onSuccess }) {
         formattedDate = new Date(scheduledDate).toISOString();
       }
 
-      console.log('Scheduling run with data:', {
-        club_id: parseInt(clubId),
-        title,
-        description,
-        scheduled_date: formattedDate,
-        location
-      });
-
-      const response = await api.post('/runs/schedule', {
-        club_id: parseInt(clubId),
-        title,
-        description,
-        scheduled_date: formattedDate,
-        location
-      });
+      if (initialRun) {
+        // Update existing scheduled run
+        await api.put(`/runs/schedule/${initialRun.id}`, {
+          title,
+          description,
+          scheduled_date: formattedDate,
+          location
+        });
+      } else {
+        // Create new scheduled run
+        await api.post('/runs/schedule', {
+          club_id: parseInt(clubId),
+          title,
+          description,
+          scheduled_date: formattedDate,
+          location
+        });
+      }
       
-      console.log('Schedule run response:', response);
       onSuccess();
     } catch (err) {
       console.error('Error scheduling run:', err);
@@ -49,7 +64,7 @@ function ScheduleRun({ clubId, onClose, onSuccess }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Schedule Run</h2>
+        <h2>{initialRun ? 'Edit Scheduled Run' : 'Schedule Run'}</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <input
@@ -80,7 +95,7 @@ function ScheduleRun({ clubId, onClose, onSuccess }) {
           />
           <div className="modal-actions">
             <button type="button" onClick={onClose}>Cancel</button>
-            <button type="submit">Schedule</button>
+            <button type="submit">{initialRun ? 'Update' : 'Schedule'}</button>
           </div>
         </form>
       </div>

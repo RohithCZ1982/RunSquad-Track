@@ -1,31 +1,35 @@
 services:
+  - type: pspg
+    name: runsquad-db
+    plan: starter
+    databaseName: runsquad
+    user: runsquad_user
+
   - type: web
     name: runsquad-backend
     env: python
-    buildCommand: cd backend && pip install -r requirements.txt
-    startCommand: cd backend && gunicorn run:app
+    plan: starter
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn --bind 0.0.0.0:$PORT run:app
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: runsquad-db
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.0
 
   - type: web
     name: runsquad-frontend
     env: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/build
+    # Note: REACT_APP_API_URL needs to be set manually after backend is deployed
+    # Format: https://runsquad-backend.onrender.com/api
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          name: runsquad-backend
-          type: web
-          property: host
-
-  - type: pspg
-    name: runsquad-db
-    plan: starter
-    databaseName: runsquad
-    user: runsquad_user
+        sync: false

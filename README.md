@@ -147,17 +147,44 @@ The frontend will run on `http://localhost:3000`
 
 ## Deployment to Render
 
-1. Push your code to GitHub
-2. Connect your repository to Render
-3. Render will automatically detect `render.yaml` and set up services:
-   - Backend service (Python web service)
-   - Frontend service (Static site)
-   - PostgreSQL database
-4. Configure environment variables in Render dashboard:
-   - `DATABASE_URL` (automatically set for PostgreSQL service)
-   - `SECRET_KEY` (auto-generated)
-   - `JWT_SECRET_KEY` (auto-generated)
-   - `REACT_APP_API_URL` (automatically set from backend service)
+### Quick Deploy (Recommended)
+
+1. **Push to GitHub**: 
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+   git push -u origin main
+   ```
+
+2. **Deploy on Render**:
+   - Go to https://dashboard.render.com
+   - Click **"New +"** → **"Blueprint"**
+   - Connect your GitHub repository
+   - Render will auto-detect `render.yaml`
+   - Click **"Apply"** to deploy all services
+
+3. **Set Frontend API URL** (After backend deploys):
+   - Go to `runsquad-frontend` service → Environment
+   - Add: `REACT_APP_API_URL` = `https://runsquad-backend.onrender.com/api`
+   - (Replace with your actual backend URL)
+   - Service will auto-redeploy
+
+### What Gets Created
+
+- ✅ **PostgreSQL Database** (`runsquad-db`) - Auto-configured
+- ✅ **Backend Service** (`runsquad-backend`) - Python web service
+- ✅ **Frontend Service** (`runsquad-frontend`) - Static React site
+
+### Environment Variables (Auto-configured)
+
+- `DATABASE_URL` - Automatically linked from database
+- `SECRET_KEY` - Auto-generated
+- `JWT_SECRET_KEY` - Auto-generated
+- `REACT_APP_API_URL` - **Set manually** after backend deploys
+
+📖 **See `QUICK_DEPLOY.md` for detailed step-by-step instructions!**
 
 ## Convert to Android App
 

@@ -369,8 +369,144 @@
   font-weight: 600;
 }
 
+.activity-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
 .activity-time {
   color: #6b7280;
   font-size: 13px;
-  margin-top: 4px;
+  margin: 0;
+}
+
+.activity-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-activity-button,
+.delete-activity-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-activity-button {
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+.edit-activity-button:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  transform: scale(1.05);
+}
+
+.delete-activity-button {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.delete-activity-button:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: scale(1.05);
+}
+
+.delete-confirm-modal {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.delete-confirm-modal h2 {
+  color: #dc2626;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+}
+
+.delete-confirm-modal > p {
+  color: #374151;
+  font-size: 14px;
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.activity-preview {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border: 1px solid #e5e7eb;
+}
+
+.activity-preview p {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.activity-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.activity-preview strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.activity-time-preview {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+}
+
+.warning-text {
+  color: #dc2626 !important;
+  font-size: 13px !important;
+  background: #fee2e2;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  margin-top: 16px !important;
+}
+
+.delete-confirm-button {
+  background: #dc2626 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.delete-confirm-button:hover {
+  background: #b91c1c !important;
+}
+
+@media (max-width: 768px) {
+  .activity-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .activity-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
