@@ -43,6 +43,24 @@ Visit: https://dashboard.render.com
    - Static React site
    - Automatically connects to backend
 
+## 🗄️ Database Initialization
+
+The database tables are automatically created when the backend starts (via `create_app()` in `app/__init__.py`).
+
+**Optional: Manual Database Initialization**
+
+If you want to manually initialize the database, you can run:
+
+1. Go to your backend service in Render dashboard
+2. Click on **"Shell"** tab
+3. Run:
+   ```bash
+   cd backend
+   python init_db.py
+   ```
+
+This will create all tables and verify the database structure.
+
 ## ⚙️ Environment Variables (Auto-Configured)
 
 All these are set automatically:

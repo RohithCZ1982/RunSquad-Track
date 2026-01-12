@@ -8,7 +8,7 @@ services:
   - type: web
     name: runsquad-backend
     env: python
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: cd backend && pip install --upgrade pip && pip install -r requirements.txt
     startCommand: gunicorn --chdir backend run:app --bind 0.0.0.0:$PORT
     envVars:
       - key: DATABASE_URL
@@ -21,6 +21,8 @@ services:
         generateValue: true
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: PIP_VERSION
+        value: 24.0
 
   - type: web
     name: runsquad-frontend
