@@ -5,7 +5,6 @@ import './ChallengeList.css';
 function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
 
@@ -43,7 +42,6 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     try {
       const response = await api.get(`/challenges/${challengeId}/leaderboard`);
       setLeaderboard(response.data);
-      setSelectedChallenge(challengeId);
       setShowLeaderboard(true);
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to fetch leaderboard');
