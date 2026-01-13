@@ -99,7 +99,7 @@ function Auth() {
           <div className="logo-container">
             <StylizedText text="RunSquad" size="medium" variant="light-bg" />
           </div>
-          <p className="tagline">Find your pace. Find your Squad
+          <p className="tagline">Find your pace. Find your Squad</p>
         </div>
 
         <div className="auth-tabs">
