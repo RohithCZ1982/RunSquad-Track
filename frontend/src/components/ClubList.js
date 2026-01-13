@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import './ClubList.css';
 
-function ClubList({ clubs, onJoin }) {
+function ClubList({ clubs, onJoin, searchMode = false }) {
   const navigate = useNavigate();
 
   const handleJoin = async (clubId) => {
@@ -18,9 +18,14 @@ function ClubList({ clubs, onJoin }) {
 
   return (
     <div className="club-list">
-      <h2>Clubs</h2>
+      {!searchMode && <h2>Your Clubs</h2>}
+      {searchMode && <h2>Search Results</h2>}
       {clubs.length === 0 ? (
-        <p className="no-clubs">No clubs available. Create one to get started!</p>
+        <p className="no-clubs">
+          {searchMode 
+            ? 'No clubs found matching your search. Try a different search term.' 
+            : 'No clubs available. Create one to get started!'}
+        </p>
       ) : (
         <div className="clubs-grid">
           {clubs.map((club) => (

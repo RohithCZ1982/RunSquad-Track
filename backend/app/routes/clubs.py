@@ -62,6 +62,8 @@ def get_clubs():
                     'location': club.location,
                     'member_count': member_count,
                     'is_member': is_member,
+                    'created_by': club.created_by,
+                    'is_creator': club.created_by == user_id,
                     'created_at': club.created_at.isoformat()
                 }
                 print(f"  - Club {club.id}: {club.name} ({member_count} members, is_member: {is_member})")

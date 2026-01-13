@@ -393,18 +393,20 @@ function ClubDetail() {
                       <div className="member-actions">
                         {!member.is_admin && (
                           <button 
-                            className="promote-button"
+                            className="promote-button icon-button"
                             onClick={() => handlePromoteMember(member.id)}
+                            title="Make Admin"
                           >
-                            Make Admin
+                            ⭐
                           </button>
                         )}
                         {club.created_by !== member.id && (
                           <button 
-                            className="remove-member-button"
+                            className="remove-member-button icon-button"
                             onClick={() => handleRemoveMember(member.id, member.name)}
+                            title="Remove Member"
                           >
-                            Remove
+                            ❌
                           </button>
                         )}
                       </div>

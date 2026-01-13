@@ -418,7 +418,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                           onClick={() => handleLeaveChallenge(challenge.id)}
                           title="Exit Challenge"
                         >
-                          🚪
+                          ❌
                         </button>
                         {isAdmin && (
                           <button 
@@ -467,7 +467,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                           onClick={() => handleLeaveChallenge(challenge.id)}
                           title="Exit Challenge"
                         >
-                          🚪
+                          ❌
                         </button>
                         {isAdmin && (
                           <>

@@ -801,40 +801,45 @@
   flex-shrink: 0;
 }
 
-.promote-button {
-  padding: 6px 12px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
+/* Icon button base styles for member actions */
+.member-actions .icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
+  border: none;
+  flex-shrink: 0;
+}
+
+.promote-button {
+  background: #3b82f6;
+  color: white;
 }
 
 .promote-button:hover {
   background: #2563eb;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .remove-member-button {
-  padding: 6px 12px;
   background: #fee2e2;
   color: #dc2626;
   border: 1px solid #dc2626;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
 }
 
 .remove-member-button:hover {
   background: #fecaca;
   border-color: #b91c1c;
   color: #b91c1c;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .loading {
@@ -949,6 +954,23 @@
 
   .members-list {
     grid-template-columns: 1fr;
+  }
+
+  .member-card {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .member-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+
+  .member-actions .icon-button {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
   }
 
   .run-card-header {
