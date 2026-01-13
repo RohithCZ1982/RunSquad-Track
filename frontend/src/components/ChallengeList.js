@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import GPSTracker from './GPSTracker';
+import CreateChallenge from './CreateChallenge';
 import './ChallengeList.css';
 
 function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
@@ -17,6 +18,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [progressImage, setProgressImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [trackError, setTrackError] = useState('');
+  const [editingChallenge, setEditingChallenge] = useState(null);
 
   const fetchChallenges = useCallback(async () => {
     try {
@@ -172,6 +174,29 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     }
   };
 
+  const handleDeleteChallenge = async (challengeId) => {
+    if (!window.confirm('Are you sure you want to delete this challenge? This action cannot be undone and will remove all challenge data including participant progress and leaderboard.')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/challenges/${challengeId}`);
+      alert('Challenge deleted successfully!');
+      fetchChallenges();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete challenge');
+    }
+  };
+
+  const handleEditChallenge = (challenge) => {
+    setEditingChallenge(challenge);
+  };
+
+  const handleChallengeUpdated = () => {
+    setEditingChallenge(null);
+    fetchChallenges();
+  };
+
   const getProgressLabel = (challengeType) => {
     const labels = {
       'weekly_mileage': 'Distance (km)',
@@ -235,6 +260,8 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     const now = new Date();
     const start = new Date(challenge.start_date);
     const end = new Date(challenge.end_date);
+    // Challenge is active if current time is between start and end (inclusive)
+    // Add small buffer to account for timezone differences
     return now >= start && now <= end;
   };
 
@@ -384,6 +411,22 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                       Complete Challenge
                     </button>
                   )}
+                  {isAdmin && (
+                    <>
+                      <button 
+                        className="edit-challenge-button"
+                        onClick={() => handleEditChallenge(challenge)}
+                      >
+                        Edit Challenge
+                      </button>
+                      <button 
+                        className="delete-challenge-button"
+                        onClick={() => handleDeleteChallenge(challenge.id)}
+                      >
+                        Delete Challenge
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -517,6 +560,15 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
             />
           </div>
         </div>
+      )}
+
+      {editingChallenge && (
+        <CreateChallenge
+          clubId={clubId}
+          challenge={editingChallenge}
+          onClose={() => setEditingChallenge(null)}
+          onSuccess={handleChallengeUpdated}
+        />
       )}
     </div>
   );

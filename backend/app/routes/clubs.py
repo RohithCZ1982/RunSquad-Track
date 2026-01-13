@@ -264,6 +264,69 @@ def join_club(club_id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
 
+@clubs_bp.route('/<int:club_id>/leave', methods=['POST'])
+@jwt_required()
+def leave_club(club_id):
+    """Leave a club (cannot leave if you're the creator)"""
+    try:
+        user_id_str = get_jwt_identity()
+        # Convert to int since JWT returns string
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    club = Club.query.get(club_id)
+    if not club:
+        response = jsonify({'error': 'Club not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    # Check if user is the creator
+    if club.created_by == user_id:
+        response = jsonify({'error': 'Club creator cannot leave the club. Delete the club instead.'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Check if user is a member
+    is_member = db.session.query(club_members).filter_by(
+        user_id=user_id, club_id=club.id
+    ).first() is not None
+    
+    if not is_member:
+        response = jsonify({'error': 'You are not a member of this club'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Remove user from club members
+    delete_stmt = club_members.delete().where(
+        (club_members.c.user_id == user_id) & (club_members.c.club_id == club_id)
+    )
+    db.session.execute(delete_stmt)
+    
+    # Remove user from club admins if they are an admin
+    delete_admin_stmt = club_admins.delete().where(
+        (club_admins.c.user_id == user_id) & (club_admins.c.club_id == club_id)
+    )
+    db.session.execute(delete_admin_stmt)
+    
+    # Create activity
+    user = User.query.get(user_id)
+    activity = Activity(
+        club_id=club.id,
+        user_id=user_id,
+        activity_type='leave_club',
+        description=f'{user.name} left the club'
+    )
+    db.session.add(activity)
+    
+    db.session.commit()
+    
+    response = jsonify({'message': 'Successfully left club'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response, 200
+
 @clubs_bp.route('/<int:club_id>', methods=['DELETE'])
 @jwt_required()
 def delete_club(club_id):

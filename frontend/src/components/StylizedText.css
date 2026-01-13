@@ -1,0 +1,155 @@
+/* Stylized RunSquad Text Effect - Inspired by RANDOM style */
+.stylized-runsquad {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 2.5em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: white;
+  text-shadow: 
+    2px 2px 0 rgba(0, 0, 0, 0.8),
+    4px 4px 0 rgba(0, 0, 0, 0.6),
+    6px 6px 0 rgba(0, 0, 0, 0.4);
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+/* Shadow/Background layer - uses data attribute for dynamic text */
+.stylized-runsquad::before {
+  content: attr(data-text);
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  color: rgba(60, 60, 60, 0.6);
+  z-index: -1;
+  opacity: 0.8;
+  text-transform: uppercase;
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  pointer-events: none;
+}
+
+/* Additional shadow layer for depth */
+.stylized-runsquad::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  color: rgba(40, 40, 40, 0.4);
+  z-index: -2;
+  opacity: 0.6;
+  text-transform: uppercase;
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  pointer-events: none;
+}
+
+.stylized-runsquad .letter {
+  position: relative;
+  display: inline-block;
+  transform: translateZ(0);
+}
+
+/* Vertical separators between letters */
+.stylized-runsquad .letter::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  z-index: 1;
+}
+
+/* Hide separator after last letter */
+.stylized-runsquad .letter:last-child::after {
+  display: none;
+}
+
+/* Smaller version for headers */
+.stylized-runsquad.small {
+  font-size: 1.8em;
+}
+
+.stylized-runsquad.small::before {
+  top: 3px;
+  left: 3px;
+}
+
+.stylized-runsquad.small::after {
+  top: 6px;
+  left: 6px;
+}
+
+/* Medium version */
+.stylized-runsquad.medium {
+  font-size: 2em;
+}
+
+/* Large version */
+.stylized-runsquad.large {
+  font-size: 3em;
+}
+
+.stylized-runsquad.large::before {
+  top: 5px;
+  left: 5px;
+}
+
+.stylized-runsquad.large::after {
+  top: 10px;
+  left: 10px;
+}
+
+/* Dark background variant */
+.stylized-runsquad.dark-bg {
+  color: white;
+  text-shadow: 
+    2px 2px 0 rgba(0, 0, 0, 0.9),
+    4px 4px 0 rgba(0, 0, 0, 0.7),
+    6px 6px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Light background variant */
+.stylized-runsquad.light-bg {
+  color: #1f2937;
+  text-shadow: 
+    2px 2px 0 rgba(255, 255, 255, 0.8),
+    4px 4px 0 rgba(200, 200, 200, 0.6),
+    6px 6px 0 rgba(150, 150, 150, 0.4);
+}
+
+.stylized-runsquad.light-bg::before {
+  color: rgba(100, 100, 100, 0.5);
+}
+
+.stylized-runsquad.light-bg::after {
+  color: rgba(80, 80, 80, 0.3);
+}
+
+.stylized-runsquad.light-bg .letter::after {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stylized-runsquad {
+    font-size: 2em;
+  }
+  
+  .stylized-runsquad.small {
+    font-size: 1.5em;
+  }
+  
+  .stylized-runsquad.large {
+    font-size: 2.5em;
+  }
+}

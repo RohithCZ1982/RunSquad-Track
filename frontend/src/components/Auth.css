@@ -39,10 +39,8 @@
   flex-shrink: 0;
 }
 
+/* Stylized text is now handled by StylizedText component */
 .auth-header h1 {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1f2937;
   margin: 0;
 }
 

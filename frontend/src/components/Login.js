@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import StylizedText from './StylizedText';
 import './Login.css';
 
 function Login() {
@@ -74,7 +75,9 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1>RunSquad</h1>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <StylizedText text="RunSquad" size="large" variant="dark-bg" />
+        </div>
         <h2>Login</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>

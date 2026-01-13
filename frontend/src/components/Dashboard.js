@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import CreateClub from './CreateClub';
 import ClubList from './ClubList';
+import StylizedText from './StylizedText';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -105,7 +106,7 @@ function Dashboard() {
 
       <header className="dashboard-header">
         <div className="header-top">
-          <h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <svg className="waveform-icon" viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
               <path 
                 d="M 0 20 L 15 20 L 20 5 L 25 35 L 30 10 L 35 30 L 40 15 L 45 25 L 50 20 L 100 20" 
@@ -116,8 +117,8 @@ function Dashboard() {
                 strokeLinejoin="round"
               />
             </svg>
-            RunSquad
-          </h1>
+            <StylizedText text="RunSquad" size="small" variant="light-bg" />
+          </div>
         </div>
         <div className="header-bottom">
           <div className="user-info">

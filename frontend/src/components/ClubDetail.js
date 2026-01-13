@@ -99,6 +99,21 @@ function ClubDetail() {
     }
   };
 
+  const handleLeaveClub = async () => {
+    if (!window.confirm('Are you sure you want to leave this club? You will lose access to all club activities and challenges.')) {
+      return;
+    }
+
+    try {
+      await api.post(`/clubs/${id}/leave`);
+      alert('Successfully left the club');
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Error leaving club:', err);
+      alert(err.response?.data?.error || 'Failed to leave club');
+    }
+  };
+
   if (!club) return <div className="loading">Loading...</div>;
 
   return (
@@ -125,7 +140,12 @@ function ClubDetail() {
               </button>
             )}
             {!club.is_admin && !club.is_creator && (
-              <button className="leave-button">Leave Club</button>
+              <button 
+                onClick={handleLeaveClub}
+                className="leave-button"
+              >
+                Leave Club
+              </button>
             )}
           </div>
         </div>

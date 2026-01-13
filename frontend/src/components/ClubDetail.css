@@ -57,8 +57,8 @@
 .back-button {
   padding: 10px 20px;
   border: 1px solid #d1d5db;
-  background: #f3f4f6;
-  color: #374151;
+  background: #f9fafb;
+  color: #6b7280;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -70,9 +70,8 @@
 }
 
 .back-button:hover {
-  background: #e5e7eb;
+  background: #f3f4f6;
   border-color: #9ca3af;
-  color: #1f2937;
 }
 
 .leave-button {

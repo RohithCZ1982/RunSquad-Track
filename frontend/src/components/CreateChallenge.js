@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import api from '../utils/api';
 import './CreateChallenge.css';
 
-function CreateChallenge({ clubId, onClose, onSuccess }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [challengeType, setChallengeType] = useState('weekly_mileage');
-  const [goalValue, setGoalValue] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+function CreateChallenge({ clubId, onClose, onSuccess, challenge = null }) {
+  const isEditMode = challenge !== null;
+  const [title, setTitle] = useState(challenge?.title || '');
+  const [description, setDescription] = useState(challenge?.description || '');
+  const [challengeType, setChallengeType] = useState(challenge?.challenge_type || 'weekly_mileage');
+  const [goalValue, setGoalValue] = useState(challenge?.goal_value?.toString() || '');
+  const [startDate, setStartDate] = useState(challenge?.start_date ? new Date(challenge.start_date).toISOString().split('T')[0] : '');
+  const [endDate, setEndDate] = useState(challenge?.end_date ? new Date(challenge.end_date).toISOString().split('T')[0] : '');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,24 +46,42 @@ function CreateChallenge({ clubId, onClose, onSuccess }) {
 
     try {
       // Format dates for API
-      const startISO = new Date(startDate).toISOString();
-      const endISO = new Date(endDate).toISOString();
+      // Date inputs only provide YYYY-MM-DD, so we need to set explicit times
+      // Set start to beginning of day UTC, end to end of day UTC
+      // This ensures the challenge is active for the full day regardless of timezone
+      const startDateObj = new Date(startDate + 'T00:00:00.000Z');
+      const endDateObj = new Date(endDate + 'T23:59:59.999Z');
+      const startISO = startDateObj.toISOString();
+      const endISO = endDateObj.toISOString();
 
-      await api.post(`/challenges/club/${clubId}`, {
-        title,
-        description: description || undefined,
-        challenge_type: challengeType,
-        goal_value: goal,
-        start_date: startISO,
-        end_date: endISO
-      });
+      if (isEditMode) {
+        // Update existing challenge
+        await api.put(`/challenges/${challenge.id}`, {
+          title,
+          description: description || undefined,
+          challenge_type: challengeType,
+          goal_value: goal,
+          start_date: startISO,
+          end_date: endISO
+        });
+      } else {
+        // Create new challenge
+        await api.post(`/challenges/club/${clubId}`, {
+          title,
+          description: description || undefined,
+          challenge_type: challengeType,
+          goal_value: goal,
+          start_date: startISO,
+          end_date: endISO
+        });
+      }
 
       if (onSuccess) {
         onSuccess();
       }
       onClose();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create challenge');
+      setError(err.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} challenge`);
       setIsSubmitting(false);
     }
   };
@@ -73,7 +92,7 @@ function CreateChallenge({ clubId, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="create-challenge-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Create Challenge</h2>
+          <h2>{isEditMode ? 'Edit Challenge' : 'Create Challenge'}</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
@@ -107,6 +126,7 @@ function CreateChallenge({ clubId, onClose, onSuccess }) {
               value={challengeType}
               onChange={(e) => setChallengeType(e.target.value)}
               required
+              disabled={isEditMode}
             >
               {challengeTypes.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -115,7 +135,9 @@ function CreateChallenge({ clubId, onClose, onSuccess }) {
               ))}
             </select>
             {selectedType && (
-              <small className="form-hint">{selectedType.description}</small>
+              <small className="form-hint">
+                {isEditMode ? 'Challenge type cannot be changed after creation' : selectedType.description}
+              </small>
             )}
           </div>
 
@@ -167,7 +189,7 @@ function CreateChallenge({ clubId, onClose, onSuccess }) {
               Cancel
             </button>
             <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Challenge'}
+              {isSubmitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Challenge' : 'Create Challenge')}
             </button>
           </div>
         </form>

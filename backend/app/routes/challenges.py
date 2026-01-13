@@ -532,3 +532,148 @@ def complete_challenge(challenge_id):
         response = jsonify({'error': f'Failed to complete challenge: {str(e)}'})
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 500
+
+@challenges_bp.route('/<int:challenge_id>', methods=['DELETE'])
+@jwt_required()
+def delete_challenge(challenge_id):
+    """Delete a challenge (admin only) - can delete even if challenge has ended"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    try:
+        challenge = Challenge.query.get(challenge_id)
+        if not challenge:
+            response = jsonify({'error': 'Challenge not found'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 404
+        
+        # Check if user is an admin of the club
+        if not is_club_admin(challenge.club_id, user_id):
+            response = jsonify({'error': 'Only club admins can delete challenges'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 403
+        
+        # Delete the challenge (cascade will handle related records)
+        db.session.delete(challenge)
+        db.session.commit()
+        
+        response = jsonify({'message': 'Challenge deleted successfully'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error deleting challenge: {e}")
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to delete challenge: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
+@challenges_bp.route('/<int:challenge_id>', methods=['PUT'])
+@jwt_required()
+def update_challenge(challenge_id):
+    """Update a challenge (admin only) - can update even if challenge has ended"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    try:
+        challenge = Challenge.query.get(challenge_id)
+        if not challenge:
+            response = jsonify({'error': 'Challenge not found'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 404
+        
+        # Check if user is an admin of the club
+        if not is_club_admin(challenge.club_id, user_id):
+            response = jsonify({'error': 'Only club admins can update challenges'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 403
+        
+        data = request.get_json()
+        
+        if not data:
+            response = jsonify({'error': 'No data provided'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
+        # Update fields if provided
+        if 'title' in data:
+            challenge.title = data['title']
+        if 'description' in data:
+            challenge.description = data.get('description')
+        # Note: challenge_type cannot be changed after creation to preserve participant progress data
+        if 'challenge_type' in data and data['challenge_type'] != challenge.challenge_type:
+            response = jsonify({'error': 'Challenge type cannot be changed after creation'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        if 'goal_value' in data:
+            challenge.goal_value = float(data['goal_value'])
+        if 'start_date' in data:
+            try:
+                challenge.start_date = datetime.fromisoformat(data['start_date'].replace('Z', '+00:00'))
+            except Exception as e:
+                response = jsonify({'error': f'Invalid start_date format: {str(e)}'})
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response, 400
+        if 'end_date' in data:
+            try:
+                challenge.end_date = datetime.fromisoformat(data['end_date'].replace('Z', '+00:00'))
+            except Exception as e:
+                response = jsonify({'error': f'Invalid end_date format: {str(e)}'})
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response, 400
+        
+        # Validate dates
+        if challenge.end_date <= challenge.start_date:
+            response = jsonify({'error': 'End date must be after start date'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
+        db.session.commit()
+        
+        # Get updated challenge data
+        participant_count = ChallengeParticipant.query.filter_by(challenge_id=challenge.id).count()
+        user_participation = ChallengeParticipant.query.filter_by(
+            challenge_id=challenge.id, user_id=user_id
+        ).first()
+        creator = User.query.get(challenge.created_by)
+        
+        response = jsonify({
+            'id': challenge.id,
+            'title': challenge.title,
+            'description': challenge.description,
+            'challenge_type': challenge.challenge_type,
+            'goal_value': challenge.goal_value,
+            'start_date': challenge.start_date.isoformat(),
+            'end_date': challenge.end_date.isoformat(),
+            'created_at': challenge.created_at.isoformat(),
+            'participant_count': participant_count,
+            'is_participating': user_participation is not None,
+            'user_progress': user_participation.progress_value if user_participation else 0,
+            'created_by': {
+                'id': creator.id if creator else None,
+                'name': creator.name if creator else 'Unknown'
+            }
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error updating challenge: {e}")
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to update challenge: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
