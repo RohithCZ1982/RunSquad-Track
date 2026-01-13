@@ -249,6 +249,46 @@ def join_challenge(challenge_id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
 
+@challenges_bp.route('/<int:challenge_id>/leave', methods=['POST'])
+@jwt_required()
+def leave_challenge(challenge_id):
+    """Leave/exit a challenge"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    challenge = Challenge.query.get(challenge_id)
+    if not challenge:
+        response = jsonify({'error': 'Challenge not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    # Check if user is participating
+    participant = ChallengeParticipant.query.filter_by(
+        challenge_id=challenge_id, user_id=user_id
+    ).first()
+    
+    if not participant:
+        response = jsonify({'error': 'You are not participating in this challenge'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Delete the participant record and all related progress entries
+    ChallengeProgressEntry.query.filter_by(
+        challenge_id=challenge_id, user_id=user_id
+    ).delete()
+    
+    db.session.delete(participant)
+    db.session.commit()
+    
+    response = jsonify({'message': 'Successfully left challenge'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response, 200
+
 @challenges_bp.route('/<int:challenge_id>/leaderboard', methods=['GET'])
 @jwt_required()
 def get_leaderboard(challenge_id):

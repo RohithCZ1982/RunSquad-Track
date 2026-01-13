@@ -146,9 +146,11 @@ function ClubDetail() {
 
       {/* Name and Buttons Section */}
       <header className="club-header">
+        <div className="header-actions">
           <button onClick={() => navigate('/dashboard')} className="back-button">
             ← Back to Dashboard
           </button>
+         </div>
           <div className="header-right-actions">
             {club.is_creator && (
               <button 
@@ -166,7 +168,8 @@ function ClubDetail() {
                 Leave Club
               </button>
             )}
-          </div>
+          
+        </div>
       </header>
 
       {showDeleteConfirm && (

@@ -50,6 +50,20 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     }
   };
 
+  const handleLeaveChallenge = async (challengeId) => {
+    if (!window.confirm('Are you sure you want to exit this challenge? Your progress will be lost.')) {
+      return;
+    }
+
+    try {
+      await api.post(`/challenges/${challengeId}/leave`);
+      alert('Successfully left challenge!');
+      fetchChallenges();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to leave challenge');
+    }
+  };
+
   const handleViewLeaderboard = async (challengeId) => {
     try {
       const response = await api.get(`/challenges/${challengeId}/leaderboard`);
@@ -396,16 +410,32 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                       >
                         🏆
                       </button>
+                      <button 
+                        className="exit-challenge-button icon-button"
+                        onClick={() => handleLeaveChallenge(challenge.id)}
+                        title="Exit Challenge"
+                      >
+                        🚪
+                      </button>
                     </>
                   )}
                   {!active && challenge.is_participating && (
-                    <button 
-                      className="view-leaderboard-button icon-button"
-                      onClick={() => handleViewLeaderboard(challenge.id)}
-                      title="View Final Results"
-                    >
-                      🏆
-                    </button>
+                    <>
+                      <button 
+                        className="view-leaderboard-button icon-button"
+                        onClick={() => handleViewLeaderboard(challenge.id)}
+                        title="View Final Results"
+                      >
+                        🏆
+                      </button>
+                      <button 
+                        className="exit-challenge-button icon-button"
+                        onClick={() => handleLeaveChallenge(challenge.id)}
+                        title="Exit Challenge"
+                      >
+                        🚪
+                      </button>
+                    </>
                   )}
                   {isAdmin && active && (
                     <button 

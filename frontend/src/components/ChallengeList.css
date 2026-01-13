@@ -249,6 +249,19 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
+.exit-challenge-button {
+  border: 1px solid #f59e0b;
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.exit-challenge-button:hover {
+  background: #fde68a;
+  border-color: #d97706;
+  color: #d97706;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
 .delete-challenge-button {
   border: 1px solid #dc2626;
   background: #fee2e2;
