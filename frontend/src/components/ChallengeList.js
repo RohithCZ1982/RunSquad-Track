@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
+import GPSTracker from './GPSTracker';
 import './ChallengeList.css';
 
 function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
@@ -8,6 +9,9 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
   const [showTrackProgress, setShowTrackProgress] = useState(false);
+  const [showTrackOptions, setShowTrackOptions] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [showGPSTracker, setShowGPSTracker] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [progressValue, setProgressValue] = useState('');
   const [progressNotes, setProgressNotes] = useState('');
@@ -62,7 +66,17 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     setProgressImage(null);
     setImagePreview(null);
     setTrackError('');
-    setShowTrackProgress(true);
+    setShowTrackOptions(true);
+  };
+
+  const handleManualTrack = () => {
+    setShowTrackOptions(false);
+    setShowManualForm(true);
+  };
+
+  const handleGPSTrack = () => {
+    setShowTrackOptions(false);
+    setShowGPSTracker(true);
   };
 
   const handleImageChange = (e) => {
@@ -99,11 +113,52 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
       });
       
       alert('Progress tracked successfully!');
+      setShowManualForm(false);
       setShowTrackProgress(false);
       fetchChallenges();
     } catch (err) {
       setTrackError(err.response?.data?.error || 'Failed to track progress');
     }
+  };
+
+  const handleGPSSave = async (runData) => {
+    try {
+      // Calculate progress value based on challenge type
+      let progressValue = 0;
+      if (selectedChallenge.challenge_type === 'fastest_5k') {
+        // For fastest 5K, use time in minutes (lower is better)
+        // Only count if distance is close to 5K (4.5-5.5km)
+        if (runData.distance_km >= 4.5 && runData.distance_km <= 5.5) {
+          progressValue = runData.duration_minutes;
+        } else {
+          alert('For fastest 5K challenge, your run must be between 4.5km and 5.5km');
+          return;
+        }
+      } else if (selectedChallenge.challenge_type === 'total_distance' || selectedChallenge.challenge_type === 'weekly_mileage') {
+        // For distance challenges, use distance in km
+        progressValue = runData.distance_km;
+      } else if (selectedChallenge.challenge_type === 'total_time') {
+        // For time challenges, use duration in minutes
+        progressValue = runData.duration_minutes;
+      }
+
+      await api.post(`/challenges/${selectedChallenge.id}/track`, {
+        progress_value: progressValue,
+        notes: runData.notes || undefined
+      });
+
+      alert('Progress tracked successfully!');
+      setShowGPSTracker(false);
+      setShowTrackProgress(false);
+      fetchChallenges();
+    } catch (err) {
+      console.error('Error saving GPS challenge progress:', err);
+      alert(err.response?.data?.error || 'Failed to track progress');
+    }
+  };
+
+  const handleGPSCancel = () => {
+    setShowGPSTracker(false);
   };
 
   const getProgressLabel = (challengeType) => {
@@ -317,12 +372,49 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
         </div>
       )}
 
-      {showTrackProgress && selectedChallenge && (
-        <div className="modal-overlay" onClick={() => setShowTrackProgress(false)}>
+      {showTrackOptions && selectedChallenge && (
+        <div className="modal-overlay" onClick={() => { setShowTrackOptions(false); setShowTrackProgress(false); }}>
+          <div className="track-options-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Track Progress - {selectedChallenge.title}</h3>
+            <p>Choose how you want to track your progress:</p>
+            <div className="track-options">
+              <button 
+                className="track-option-button manual"
+                onClick={handleManualTrack}
+              >
+                <span className="option-icon">✏️</span>
+                <div>
+                  <h4>Track Manually</h4>
+                  <p>Enter progress value, notes, and optional image</p>
+                </div>
+              </button>
+              <button 
+                className="track-option-button gps"
+                onClick={handleGPSTrack}
+              >
+                <span className="option-icon">📍</span>
+                <div>
+                  <h4>Track Run (GPS)</h4>
+                  <p>Use GPS to track your run in real-time</p>
+                </div>
+              </button>
+            </div>
+            <button 
+              className="close-button"
+              onClick={() => { setShowTrackOptions(false); setShowTrackProgress(false); }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showManualForm && selectedChallenge && (
+        <div className="modal-overlay" onClick={() => { setShowManualForm(false); setShowTrackProgress(false); }}>
           <div className="track-progress-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Track Progress - {selectedChallenge.title}</h2>
-              <button className="close-button" onClick={() => setShowTrackProgress(false)}>×</button>
+              <button className="close-button" onClick={() => { setShowManualForm(false); setShowTrackProgress(false); }}>×</button>
             </div>
             
             {trackError && <div className="error-message">{trackError}</div>}
@@ -383,7 +475,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
               </div>
               
               <div className="modal-actions">
-                <button type="button" onClick={() => setShowTrackProgress(false)}>
+                <button type="button" onClick={() => { setShowManualForm(false); setShowTrackProgress(false); }}>
                   Cancel
                 </button>
                 <button type="submit">
@@ -391,6 +483,18 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showGPSTracker && selectedChallenge && (
+        <div className="modal-overlay" onClick={() => { setShowGPSTracker(false); setShowTrackProgress(false); }}>
+          <div className="gps-tracker-modal" onClick={(e) => e.stopPropagation()}>
+            <GPSTracker
+              clubId={null}
+              onSave={handleGPSSave}
+              onCancel={handleGPSCancel}
+            />
           </div>
         </div>
       )}
