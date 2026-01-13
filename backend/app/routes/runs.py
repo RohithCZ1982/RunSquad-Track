@@ -240,17 +240,23 @@ def schedule_run():
         print(f"Parsing date: {scheduled_date_str}")
         
         try:
-            # Try ISO format first
-            if 'T' in scheduled_date_str:
-                # datetime-local format: "2024-01-15T14:30" -> convert to UTC
-                if scheduled_date_str.endswith('Z') or '+' in scheduled_date_str:
-                    scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
-                else:
-                    # datetime-local format without timezone - treat as local time
-                    scheduled_date = datetime.fromisoformat(scheduled_date_str)
-            else:
-                # Just date format
+            # Parse the scheduled date
+            # Frontend sends ISO format (UTC) like "2024-01-15T19:30:00.000Z"
+            # We need to parse it correctly as UTC
+            if scheduled_date_str.endswith('Z'):
+                # ISO format with Z (UTC)
+                scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
+            elif '+' in scheduled_date_str or scheduled_date_str.count('-') >= 3:
+                # ISO format with timezone offset
                 scheduled_date = datetime.fromisoformat(scheduled_date_str)
+            elif 'T' in scheduled_date_str:
+                # datetime-local format without timezone: "2024-01-15T14:30"
+                # Treat as UTC to preserve the exact time the user selected
+                # (Frontend already converted local time to UTC)
+                scheduled_date = datetime.fromisoformat(scheduled_date_str + '+00:00')
+            else:
+                # Just date format - treat as midnight UTC
+                scheduled_date = datetime.fromisoformat(scheduled_date_str + 'T00:00:00+00:00')
         except Exception as e:
             print(f"Date parsing error: {e}")
             import traceback
@@ -406,13 +412,15 @@ def update_scheduled_run(scheduled_run_id):
         if 'scheduled_date' in data:
             scheduled_date_str = data['scheduled_date']
             try:
-                if 'T' in scheduled_date_str:
-                    if scheduled_date_str.endswith('Z') or '+' in scheduled_date_str:
-                        scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
-                    else:
-                        scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str)
-                else:
+                # Parse the scheduled date (same logic as POST endpoint)
+                if scheduled_date_str.endswith('Z'):
+                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
+                elif '+' in scheduled_date_str or scheduled_date_str.count('-') >= 3:
                     scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str)
+                elif 'T' in scheduled_date_str:
+                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str + '+00:00')
+                else:
+                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str + 'T00:00:00+00:00')
             except Exception as e:
                 response = jsonify({'error': f'Invalid date format: {str(e)}'})
                 response.headers.add('Access-Control-Allow-Origin', '*')

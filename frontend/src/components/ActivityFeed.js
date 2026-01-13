@@ -136,9 +136,30 @@ function ActivityFeed({ clubId }) {
     }
 
     try {
+      // Convert datetime-local format to ISO format
+      // datetime-local gives us "YYYY-MM-DDTHH:mm" in user's local time
       let formattedDate = date;
-      if (date) {
-        formattedDate = new Date(date).toISOString();
+      if (date && !date.includes('Z') && !date.includes('+')) {
+        // datetime-local format: "2024-01-15T14:30"
+        // Parse the components explicitly to create a Date in local timezone
+        const [datePart, timePart] = date.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hours, minutes] = (timePart || '00:00').split(':').map(Number);
+        
+        // Create a Date object using local time components
+        // This explicitly creates the date in the user's local timezone
+        const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+        
+        // Check if the date is valid
+        if (isNaN(localDate.getTime())) {
+          throw new Error('Invalid date format');
+        }
+        
+        // Convert to ISO string (UTC) - this correctly converts local time to UTC
+        formattedDate = localDate.toISOString();
+      } else if (date && (date.includes('Z') || date.includes('+'))) {
+        // Already in ISO format, use as is
+        formattedDate = date;
       }
 
       // Update the activity (which will update the underlying run)

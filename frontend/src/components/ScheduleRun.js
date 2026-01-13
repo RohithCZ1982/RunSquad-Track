@@ -39,12 +39,33 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
 
     try {
       // Convert datetime-local format to ISO format
+      // datetime-local gives us "YYYY-MM-DDTHH:mm" in user's local time
       let formattedDate = scheduledDate;
       if (scheduledDate && !scheduledDate.includes('Z') && !scheduledDate.includes('+')) {
-        // datetime-local format: "2024-01-15T14:30" -> convert to ISO with timezone
-        // Create date object from local time, then convert to ISO
-        const localDate = new Date(scheduledDate);
+        // datetime-local format: "2024-01-15T14:30"
+        // Parse the components explicitly to create a Date in local timezone
+        const [datePart, timePart] = scheduledDate.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hours, minutes] = (timePart || '00:00').split(':').map(Number);
+        
+        // Create a Date object using local time components
+        // This explicitly creates the date in the user's local timezone
+        const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+        
+        // Check if the date is valid
+        if (isNaN(localDate.getTime())) {
+          throw new Error('Invalid date format');
+        }
+        
+        // Convert to ISO string (UTC) - this correctly converts local time to UTC
         formattedDate = localDate.toISOString();
+        
+        console.log('Date conversion:', {
+          input: scheduledDate,
+          localComponents: { year, month, day, hours, minutes },
+          localDate: localDate.toString(),
+          isoString: formattedDate
+        });
       }
 
       if (initialRun) {
