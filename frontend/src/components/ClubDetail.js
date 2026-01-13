@@ -146,29 +146,29 @@ function ClubDetail() {
 
       {/* Name and Buttons Section */}
       <header className="club-header">
-        <div className="header-actions">
-          <button onClick={() => navigate('/dashboard')} className="back-button">
+        <div className="header-bottom">
+          <div className="user-info">
+            <span className="user-name">{club.name}</span>
+          </div>
+          <button onClick={() => navigate('/dashboard')} className="header-button">
             ← Back to Dashboard
           </button>
-         </div>
-          <div className="header-right-actions">
-            {club.is_creator && (
-              <button 
-                onClick={() => setShowDeleteConfirm(true)} 
-                className="delete-button"
-              >
-                Delete Club
-              </button>
-            )}
-            {!club.is_admin && !club.is_creator && (
-              <button 
-                onClick={handleLeaveClub}
-                className="leave-button"
-              >
-                Leave Club
-              </button>
-            )}
-          
+          {club.is_creator && (
+            <button 
+              onClick={() => setShowDeleteConfirm(true)} 
+              className="header-button delete-button"
+            >
+              Delete Club
+            </button>
+          )}
+          {!club.is_admin && !club.is_creator && (
+            <button 
+              onClick={handleLeaveClub}
+              className="header-button"
+            >
+              Leave Club
+            </button>
+          )}
         </div>
       </header>
 

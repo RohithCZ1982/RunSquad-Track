@@ -65,28 +65,27 @@
   z-index: 100;
 }
 
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  gap: 12px;
-}
-
-.header-actions .back-button {
-  flex-shrink: 0;
-  order: 1;
-}
-
-.header-right-actions {
-  order: 2;
-  flex-shrink: 0;
+.header-bottom {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.back-button {
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.user-name {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.header-button {
   padding: 10px 20px;
   border: 1px solid #d1d5db;
   background: white;
@@ -96,49 +95,22 @@
   transition: all 0.2s;
   font-size: 14px;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   white-space: nowrap;
-  min-width: fit-content;
-  z-index: 1;
 }
 
-.back-button:hover {
+.header-button:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.leave-button {
-  padding: 10px 20px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
-  color: #6b7280;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.leave-button:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-.delete-button {
-  padding: 10px 20px;
+.header-button.delete-button {
   border: 1px solid #dc2626;
   background: #fee2e2;
   color: #dc2626;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
   font-weight: 600;
 }
 
-.delete-button:hover {
+.header-button.delete-button:hover {
   background: #fecaca;
   border-color: #b91c1c;
   color: #b91c1c;
@@ -795,21 +767,18 @@
     top: 56px;
   }
 
-  .header-actions {
-    flex-wrap: wrap;
+  .header-bottom {
+    gap: 8px;
   }
 
-  .back-button {
-    font-size: 13px;
-    padding: 8px 16px;
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 8px;
+  .user-name {
+    font-size: 14px;
+    margin-right: auto;
   }
 
-  .header-right-actions {
-    width: 100%;
-    justify-content: center;
+  .header-button {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .club-info-section {
