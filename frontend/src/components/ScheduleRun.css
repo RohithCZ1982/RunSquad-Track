@@ -40,6 +40,14 @@
   font-size: 16px;
   font-family: inherit;
   transition: border-color 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-content input[type="datetime-local"] {
+  min-height: 44px;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .modal-content input:focus,
@@ -89,4 +97,25 @@
   border-radius: 5px;
   margin-bottom: 15px;
   text-align: center;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .modal-content {
+    padding: 20px;
+    width: 95%;
+    max-width: 100%;
+  }
+
+  .modal-content input[type="datetime-local"] {
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 48px;
+    padding: 14px;
+  }
+
+  .modal-content input,
+  .modal-content textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 14px;
+  }
 }

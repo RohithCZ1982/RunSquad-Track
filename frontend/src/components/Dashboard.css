@@ -95,7 +95,7 @@
 
 .user-name {
   color: #1f2937;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
 }
 
@@ -185,6 +185,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-container svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .logout-btn:hover .icon-container {

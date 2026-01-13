@@ -84,7 +84,7 @@
 
 .user-name {
   color: #1f2937;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
 }
 
@@ -161,6 +161,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-container svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .logout-btn:hover .icon-container {
@@ -712,6 +720,40 @@
   color: #6b7280;
   font-size: 14px;
   margin: 0;
+}
+
+.join-run-button,
+.leave-run-button {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.join-run-button {
+  background: #3b82f6;
+  color: white;
+}
+
+.join-run-button:hover {
+  background: #2563eb;
+}
+
+.leave-run-button {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+}
+
+.leave-run-button:hover {
+  background: #fecaca;
+  border-color: #b91c1c;
+  color: #b91c1c;
 }
 
 .members-section {

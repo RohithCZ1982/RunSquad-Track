@@ -344,6 +344,9 @@ def get_scheduled_runs(club_id):
         # Get participant count from the association table
         participant_count = len(list(run.participants)) if run.participants else 0
         
+        # Check if current user is a participant
+        is_participating = user_id in [p.id for p in run.participants] if run.participants else False
+        
         runs_data.append({
             'id': run.id,
             'title': run.title,
@@ -354,7 +357,8 @@ def get_scheduled_runs(club_id):
                 'id': creator.id if creator else None,
                 'name': creator.name if creator else 'Unknown'
             },
-            'participant_count': participant_count
+            'participant_count': participant_count,
+            'is_participating': is_participating
         })
     
     response = jsonify(runs_data)

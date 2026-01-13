@@ -12,12 +12,23 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
   // Set initial date when editing
   useEffect(() => {
     if (initialRun && initialRun.scheduled_date) {
+      // Parse the ISO date string and convert to local datetime-local format
       const date = new Date(initialRun.scheduled_date);
+      // Get local date components
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
+      setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    } else if (!initialRun) {
+      // Set default to current date/time for new runs
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
       setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`);
     }
   }, [initialRun]);
@@ -31,7 +42,9 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
       let formattedDate = scheduledDate;
       if (scheduledDate && !scheduledDate.includes('Z') && !scheduledDate.includes('+')) {
         // datetime-local format: "2024-01-15T14:30" -> convert to ISO with timezone
-        formattedDate = new Date(scheduledDate).toISOString();
+        // Create date object from local time, then convert to ISO
+        const localDate = new Date(scheduledDate);
+        formattedDate = localDate.toISOString();
       }
 
       if (initialRun) {

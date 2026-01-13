@@ -115,6 +115,29 @@ function ClubDetail() {
     }
   };
 
+  const handleJoinScheduledRun = async (runId) => {
+    try {
+      await api.post(`/runs/schedule/${runId}/join`);
+      alert('Successfully joined the scheduled run!');
+      fetchScheduledRuns();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to join scheduled run');
+    }
+  };
+
+  const handleLeaveScheduledRun = async (runId) => {
+    if (!window.confirm('Are you sure you want to leave this scheduled run?')) {
+      return;
+    }
+    try {
+      await api.post(`/runs/schedule/${runId}/leave`);
+      alert('Successfully left the scheduled run');
+      fetchScheduledRuns();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to leave scheduled run');
+    }
+  };
+
   const handleLeaveClub = async () => {
     if (!window.confirm('Are you sure you want to leave this club? You will lose access to all club activities and challenges.')) {
       return;
