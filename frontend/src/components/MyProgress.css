@@ -509,9 +509,9 @@
 
 .track-run-button {
   padding: 12px 24px;
-  background: #1f2937;
-  color: white;
-  border: none;
+  background: #1f2937 !important;
+  color: white !important;
+  border: none !important;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
@@ -523,8 +523,23 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.track-run-button:hover {
-  background: #111827;
+.progress-header .track-run-button {
+  padding: 12px 24px;
+  background: #1f2937 !important;
+  color: white !important;
+  border: none !important;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.track-run-button:hover,
+.progress-header .track-run-button:hover {
+  background: #111827 !important;
+  border-color: transparent !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

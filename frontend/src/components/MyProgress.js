@@ -42,7 +42,7 @@ function MyProgress() {
   const [showGPSTracker, setShowGPSTracker] = useState(false);
   const [editingRun, setEditingRun] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  const [chartType, setChartType] = useState('distance'); // 'distance', 'speed', 'performance'
+  const [chartType, setChartType] = useState('distance'); // 'distance', 'speed'
 
   useEffect(() => {
     fetchProgress();
@@ -159,9 +159,11 @@ function MyProgress() {
 
   // Prepare chart data - get last 10 runs for better visualization
   const getRecentRuns = () => {
-    // Get last 10 runs, or all runs if less than 10
-    const runsToShow = runs.length > 10 ? runs.slice(0, 10) : runs;
-    return runsToShow.reverse(); // Reverse to show oldest first (left to right)
+    // Sort runs by date in ascending order (oldest to newest)
+    const sortedRuns = [...runs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Get last 10 runs (most recent 10), or all runs if less than 10
+    const runsToShow = sortedRuns.length > 10 ? sortedRuns.slice(-10) : sortedRuns;
+    return runsToShow; // Already in ascending order (oldest to newest)
   };
 
   const getDistanceChartData = () => {
@@ -213,113 +215,6 @@ function MyProgress() {
           pointBorderWidth: 2,
         },
       ],
-    };
-  };
-
-  // Calculate performance score (combination of distance and speed)
-  const calculatePerformanceScore = (runs) => {
-    if (runs.length === 0) return [];
-    
-    // Normalize distance and speed, then combine them
-    const distances = runs.map(r => r.distance_km);
-    const speeds = runs.map(r => r.speed_kmh);
-    
-    const maxDistance = Math.max(...distances);
-    const maxSpeed = Math.max(...speeds);
-    const minDistance = Math.min(...distances);
-    const minSpeed = Math.min(...speeds);
-    
-    // Calculate performance score: (normalized distance * 0.6) + (normalized speed * 0.4)
-    // This gives more weight to distance but also considers speed
-    return runs.map((run, index) => {
-      const normalizedDistance = maxDistance > minDistance 
-        ? ((run.distance_km - minDistance) / (maxDistance - minDistance)) * 100
-        : 50;
-      const normalizedSpeed = maxSpeed > minSpeed
-        ? ((run.speed_kmh - minSpeed) / (maxSpeed - minSpeed)) * 100
-        : 50;
-      
-      return {
-        score: (normalizedDistance * 0.6) + (normalizedSpeed * 0.4),
-        date: run.date,
-        index: index
-      };
-    });
-  };
-
-  const getPerformanceTrendData = () => {
-    const recentRuns = getRecentRuns();
-    if (recentRuns.length === 0) {
-      return { labels: [], datasets: [] };
-    }
-    
-    const performanceScores = calculatePerformanceScore(recentRuns);
-    const scores = performanceScores.map(p => p.score);
-    
-    // Calculate trend (improving or declining)
-    const firstHalf = scores.slice(0, Math.ceil(scores.length / 2));
-    const secondHalf = scores.slice(Math.ceil(scores.length / 2));
-    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    const isImproving = secondAvg > firstAvg;
-    
-    // Determine color based on trend
-    const lineColor = isImproving ? '#10b981' : '#ef4444';
-    const fillColor = isImproving ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-    
-    return {
-      labels: recentRuns.map(run => {
-        const date = new Date(run.date);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }),
-      datasets: [
-        {
-          label: 'Performance Score',
-          data: scores,
-          borderColor: lineColor,
-          backgroundColor: fillColor,
-          borderWidth: 3,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          pointBackgroundColor: lineColor,
-          pointBorderColor: '#ffffff',
-          pointBorderWidth: 2,
-        },
-        // Add trend line (average)
-        {
-          label: 'Average',
-          data: scores.map(() => scores.reduce((a, b) => a + b, 0) / scores.length),
-          borderColor: '#6b7280',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-        },
-      ],
-    };
-  };
-  
-  const getPerformanceInfo = () => {
-    const recentRuns = getRecentRuns();
-    if (recentRuns.length < 2) return null;
-    
-    const performanceScores = calculatePerformanceScore(recentRuns);
-    const scores = performanceScores.map(p => p.score);
-    
-    const firstHalf = scores.slice(0, Math.ceil(scores.length / 2));
-    const secondHalf = scores.slice(Math.ceil(scores.length / 2));
-    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    const change = ((secondAvg - firstAvg) / firstAvg) * 100;
-    const isImproving = change > 0;
-    
-    return {
-      isImproving,
-      change: Math.abs(change).toFixed(1),
-      trend: isImproving ? 'Improving' : 'Declining'
     };
   };
 
@@ -379,76 +274,6 @@ function MyProgress() {
       },
     },
   });
-
-  const getPerformanceChartOptions = () => {
-    const performanceInfo = getPerformanceInfo();
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            color: '#6b7280',
-            font: {
-              size: 12,
-              weight: '600',
-            },
-            padding: 15,
-            filter: (item) => item.text !== 'Average' || performanceInfo !== null,
-          },
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: 12,
-          titleFont: {
-            size: 14,
-            weight: '600',
-          },
-          bodyFont: {
-            size: 13,
-          },
-          cornerRadius: 8,
-          callbacks: {
-            label: (context) => {
-              if (context.datasetIndex === 0) {
-                return `Performance: ${context.parsed.y.toFixed(1)}`;
-              }
-              return `Average: ${context.parsed.y.toFixed(1)}`;
-            }
-          }
-        },
-      },
-      scales: {
-        x: {
-          grid: {
-            display: false,
-          },
-          ticks: {
-            color: '#6b7280',
-            font: {
-              size: 11,
-            },
-          },
-        },
-        y: {
-          grid: {
-            color: 'rgba(0, 0, 0, 0.05)',
-          },
-          ticks: {
-            color: '#6b7280',
-            font: {
-              size: 11,
-            },
-          },
-          beginAtZero: false,
-          min: 0,
-          max: 100,
-        },
-      },
-    };
-  };
 
   return (
     <div className="progress-container">
@@ -553,34 +378,8 @@ function MyProgress() {
               >
                 Speed
               </button>
-              <button
-                className={chartType === 'performance' ? 'active' : ''}
-                onClick={() => setChartType('performance')}
-              >
-                Performance
-              </button>
             </div>
           </div>
-          {chartType === 'performance' && getPerformanceInfo() && (
-            <div className="performance-indicator">
-              <div className={`performance-badge ${getPerformanceInfo().isImproving ? 'improving' : 'declining'}`}>
-                <span className="performance-icon">
-                  {getPerformanceInfo().isImproving ? '📈' : '📉'}
-                </span>
-                <div className="performance-text">
-                  <span className="performance-trend">{getPerformanceInfo().trend}</span>
-                  <span className="performance-change">
-                    {getPerformanceInfo().isImproving ? '+' : '-'}{getPerformanceInfo().change}%
-                  </span>
-                </div>
-              </div>
-              <p className="performance-description">
-                {getPerformanceInfo().isImproving 
-                  ? 'Your performance is improving! Keep up the great work! 🎉'
-                  : 'Your performance has declined. Consider adjusting your training routine.'}
-              </p>
-            </div>
-          )}
           <div className="chart-container">
             {chartType === 'distance' && (
               <Line
@@ -592,12 +391,6 @@ function MyProgress() {
               <Line
                 data={getSpeedChartData()}
                 options={getChartOptions('Speed (km/h)', '#10b981')}
-              />
-            )}
-            {chartType === 'performance' && (
-              <Line
-                data={getPerformanceTrendData()}
-                options={getPerformanceChartOptions()}
               />
             )}
           </div>
