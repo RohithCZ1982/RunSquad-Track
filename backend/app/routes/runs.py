@@ -515,6 +515,95 @@ def delete_scheduled_run(scheduled_run_id):
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response, 500
 
+@runs_bp.route('/schedule/<int:scheduled_run_id>/join', methods=['POST'])
+@jwt_required()
+def join_scheduled_run(scheduled_run_id):
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    scheduled_run = ScheduledRun.query.get(scheduled_run_id)
+    if not scheduled_run:
+        response = jsonify({'error': 'Scheduled run not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    user = User.query.get(user_id)
+    if not user:
+        response = jsonify({'error': 'User not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    # Check if already a participant
+    if user_id in [p.id for p in scheduled_run.participants]:
+        response = jsonify({'error': 'You are already participating in this run'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    try:
+        scheduled_run.participants.append(user)
+        db.session.commit()
+        
+        response = jsonify({'message': 'Successfully joined scheduled run'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to join scheduled run: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
+@runs_bp.route('/schedule/<int:scheduled_run_id>/leave', methods=['POST'])
+@jwt_required()
+def leave_scheduled_run(scheduled_run_id):
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    scheduled_run = ScheduledRun.query.get(scheduled_run_id)
+    if not scheduled_run:
+        response = jsonify({'error': 'Scheduled run not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    # Check if user is a participant
+    if user_id not in [p.id for p in scheduled_run.participants]:
+        response = jsonify({'error': 'You are not participating in this run'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Prevent creator from leaving
+    if scheduled_run.created_by == user_id:
+        response = jsonify({'error': 'The creator cannot leave the scheduled run'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    try:
+        user = User.query.get(user_id)
+        scheduled_run.participants.remove(user)
+        db.session.commit()
+        
+        response = jsonify({'message': 'Successfully left scheduled run'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to leave scheduled run: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
 @runs_bp.route('/<int:run_id>', methods=['PUT'])
 @jwt_required()
 def update_run(run_id):
