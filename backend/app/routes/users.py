@@ -6,6 +6,7 @@ from datetime import datetime
 import re
 import io
 from openpyxl import load_workbook
+from sqlalchemy import text
 
 users_bp = Blueprint('users', __name__)
 
@@ -421,9 +422,12 @@ def bulk_import_users():
                     })
                     continue
                 
-                # Check if user already exists
-                existing_user = User.query.filter_by(email=email).first()
-                if existing_user:
+                # Check if user already exists (using raw SQL to avoid address column issue)
+                result = db.session.execute(
+                    text("SELECT id FROM \"user\" WHERE email = :email LIMIT 1"),
+                    {"email": email}
+                ).fetchone()
+                if result:
                     skipped_users.append({
                         'row': row_idx,
                         'email': email,

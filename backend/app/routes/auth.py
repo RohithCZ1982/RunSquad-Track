@@ -34,7 +34,7 @@ def register():
             'id': user.id,
             'email': user.email,
             'name': user.name,
-            'address': user.address
+            'address': getattr(user, 'address', None)
         }
     }), 201
 
@@ -59,7 +59,7 @@ def login():
             'id': user.id,
             'email': user.email,
             'name': user.name,
-            'address': user.address
+            'address': getattr(user, 'address', None)
         }
     }), 200
 
@@ -78,5 +78,5 @@ def get_current_user():
         'id': user.id,
         'email': user.email,
         'name': user.name,
-        'address': user.address
+        'address': getattr(user, 'address', None)
     }), 200

@@ -21,7 +21,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    address = db.Column(db.String(200))
+    # address = db.Column(db.String(200))  # Commented out - column doesn't exist in database
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
