@@ -41,14 +41,17 @@ function StylizedText({ text = 'RunSquad', size = 'medium', variant = 'dark-bg',
   }
 
   // Create shadow layers using data attribute for dynamic text
+  // For "RunSquad", add wider space in shadow to match shoe symbol width
+  // Using em space (U+2003) for better alignment
+  const shadowText = text === 'RunSquad' ? 'Run\u2003Squad' : text;
   const shadowStyle = {
-    '--text-content': `"${text}"`
+    '--text-content': `"${shadowText}"`
   };
 
   return (
     <h1 
       className={`stylized-runsquad ${size} ${variant} ${className}`}
-      data-text={text}
+      data-text={shadowText}
       style={shadowStyle}
     >
       {displayContent}

@@ -33,6 +33,7 @@
   font-weight: inherit;
   letter-spacing: inherit;
   pointer-events: none;
+  white-space: pre;
 }
 
 /* Additional shadow layer for depth */
@@ -49,6 +50,13 @@
   font-weight: inherit;
   letter-spacing: inherit;
   pointer-events: none;
+  white-space: pre;
+}
+
+/* Ensure shadow spacing matches shoe symbol position */
+.stylized-runsquad[data-text*="\u2003"]::before,
+.stylized-runsquad[data-text*="\u2003"]::after {
+  white-space: pre;
 }
 
 .stylized-runsquad .letter {
@@ -87,7 +95,29 @@
   margin: 0 0.1em;
   vertical-align: middle;
   transform: translateZ(0);
-  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+  filter: 
+    grayscale(100%) 
+    brightness(0) 
+    contrast(1.2)
+    drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+}
+
+/* Dark background variant - black shoe */
+.stylized-runsquad.dark-bg .shoe-symbol {
+  filter: 
+    grayscale(100%) 
+    brightness(0) 
+    contrast(1.5)
+    drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+}
+
+/* Light background variant - grey shoe */
+.stylized-runsquad.light-bg .shoe-symbol {
+  filter: 
+    grayscale(100%) 
+    brightness(0.3) 
+    contrast(1.2)
+    drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.2));
 }
 
 /* Hide separator before shoe symbol */
