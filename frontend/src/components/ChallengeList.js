@@ -396,58 +396,102 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                   )}
                   {challenge.is_participating && active && (
                     <>
-                      <button 
-                        className="track-progress-button icon-button"
-                        onClick={() => handleTrackProgress(challenge)}
-                        title="Track Progress"
-                      >
-                        🏃
-                      </button>
-                      <button 
-                        className="view-leaderboard-button icon-button"
-                        onClick={() => handleViewLeaderboard(challenge.id)}
-                        title="View Leaderboard"
-                      >
-                        🏆
-                      </button>
-                      <button 
-                        className="exit-challenge-button icon-button"
-                        onClick={() => handleLeaveChallenge(challenge.id)}
-                        title="Exit Challenge"
-                      >
-                        🚪
-                      </button>
+                      <div className="primary-actions">
+                        <button 
+                          className="track-progress-button icon-button"
+                          onClick={() => handleTrackProgress(challenge)}
+                          title="Track Progress"
+                        >
+                          🏃
+                        </button>
+                        <button 
+                          className="view-leaderboard-button icon-button"
+                          onClick={() => handleViewLeaderboard(challenge.id)}
+                          title="View Leaderboard"
+                        >
+                          🏆
+                        </button>
+                      </div>
+                      <div className="secondary-actions">
+                        <button 
+                          className="exit-challenge-button icon-button"
+                          onClick={() => handleLeaveChallenge(challenge.id)}
+                          title="Exit Challenge"
+                        >
+                          🚪
+                        </button>
+                        {isAdmin && (
+                          <button 
+                            className="complete-challenge-button icon-button"
+                            onClick={() => handleCompleteChallenge(challenge.id)}
+                            title="Complete Challenge"
+                          >
+                            ✅
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <>
+                            <button 
+                              className="edit-challenge-button icon-button"
+                              onClick={() => handleEditChallenge(challenge)}
+                              title="Edit Challenge"
+                            >
+                              📝
+                            </button>
+                            <button 
+                              className="delete-challenge-button icon-button"
+                              onClick={() => handleDeleteChallenge(challenge.id)}
+                              title="Delete Challenge"
+                            >
+                              🗑️
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </>
                   )}
                   {!active && challenge.is_participating && (
                     <>
-                      <button 
-                        className="view-leaderboard-button icon-button"
-                        onClick={() => handleViewLeaderboard(challenge.id)}
-                        title="View Final Results"
-                      >
-                        🏆
-                      </button>
-                      <button 
-                        className="exit-challenge-button icon-button"
-                        onClick={() => handleLeaveChallenge(challenge.id)}
-                        title="Exit Challenge"
-                      >
-                        🚪
-                      </button>
+                      <div className="primary-actions">
+                        <button 
+                          className="view-leaderboard-button icon-button"
+                          onClick={() => handleViewLeaderboard(challenge.id)}
+                          title="View Final Results"
+                        >
+                          🏆
+                        </button>
+                      </div>
+                      <div className="secondary-actions">
+                        <button 
+                          className="exit-challenge-button icon-button"
+                          onClick={() => handleLeaveChallenge(challenge.id)}
+                          title="Exit Challenge"
+                        >
+                          🚪
+                        </button>
+                        {isAdmin && (
+                          <>
+                            <button 
+                              className="edit-challenge-button icon-button"
+                              onClick={() => handleEditChallenge(challenge)}
+                              title="Edit Challenge"
+                            >
+                              📝
+                            </button>
+                            <button 
+                              className="delete-challenge-button icon-button"
+                              onClick={() => handleDeleteChallenge(challenge.id)}
+                              title="Delete Challenge"
+                            >
+                              🗑️
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </>
                   )}
-                  {isAdmin && active && (
-                    <button 
-                      className="complete-challenge-button icon-button"
-                      onClick={() => handleCompleteChallenge(challenge.id)}
-                      title="Complete Challenge"
-                    >
-                      ✅
-                    </button>
-                  )}
-                  {isAdmin && (
-                    <>
+                  {isAdmin && active && !challenge.is_participating && (
+                    <div className="secondary-actions">
                       <button 
                         className="edit-challenge-button icon-button"
                         onClick={() => handleEditChallenge(challenge)}
@@ -462,7 +506,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                       >
                         🗑️
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>

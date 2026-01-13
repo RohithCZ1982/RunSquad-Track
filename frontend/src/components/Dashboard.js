@@ -112,6 +112,19 @@ function Dashboard() {
           </svg>
           <StylizedText text="RunSquad" size="small" variant="light-bg" />
         </div>
+        <button 
+          onClick={handleLogout} 
+          className="logout-btn"
+        >
+          <span className="btn-text">Log Out</span>
+          <div className="icon-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-log-out">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </div>
+        </button>
       </header>
 
       {/* Hero Section */}
@@ -149,16 +162,6 @@ function Dashboard() {
             </div>
           </div>
           <button onClick={() => navigate('/progress')} className="header-button">My Progress</button>
-          <button onClick={handleLogout} className="logout-btn">
-            <span className="btn-text">Log Out</span>
-            <div className="icon-container">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-log-out">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </div>
-          </button>
         </div>
       </header>
 
@@ -167,9 +170,10 @@ function Dashboard() {
           <button onClick={() => setShowCreateClub(true)} className="primary-button">
             Create Club
           </button>
-          <button onClick={() => navigate('/bulk-import')} className="secondary-button">
+          {/* Bulk Import Users button hidden */}
+          {/* <button onClick={() => navigate('/bulk-import')} className="secondary-button">
             Bulk Import Users
-          </button>
+          </button> */}
         </div>
 
         {showCreateClub && (
