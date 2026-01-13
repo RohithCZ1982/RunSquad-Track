@@ -373,57 +373,64 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                 <div className="challenge-actions">
                   {!challenge.is_participating && active && (
                     <button 
-                      className="join-challenge-button"
+                      className="join-challenge-button icon-button"
                       onClick={() => handleJoinChallenge(challenge.id)}
+                      title="Join Challenge"
                     >
-                      Join Challenge
+                      ➕
                     </button>
                   )}
                   {challenge.is_participating && active && (
                     <>
                       <button 
-                        className="track-progress-button"
+                        className="track-progress-button icon-button"
                         onClick={() => handleTrackProgress(challenge)}
+                        title="Track Progress"
                       >
-                        Track Progress
+                        ✏️
                       </button>
                       <button 
-                        className="view-leaderboard-button"
+                        className="view-leaderboard-button icon-button"
                         onClick={() => handleViewLeaderboard(challenge.id)}
+                        title="View Leaderboard"
                       >
-                        View Leaderboard
+                        🏆
                       </button>
                     </>
                   )}
                   {!active && challenge.is_participating && (
                     <button 
-                      className="view-leaderboard-button"
+                      className="view-leaderboard-button icon-button"
                       onClick={() => handleViewLeaderboard(challenge.id)}
+                      title="View Final Results"
                     >
-                      View Final Results
+                      🏆
                     </button>
                   )}
                   {isAdmin && active && (
                     <button 
-                      className="complete-challenge-button"
+                      className="complete-challenge-button icon-button"
                       onClick={() => handleCompleteChallenge(challenge.id)}
+                      title="Complete Challenge"
                     >
-                      Complete Challenge
+                      ✅
                     </button>
                   )}
                   {isAdmin && (
                     <>
                       <button 
-                        className="edit-challenge-button"
+                        className="edit-challenge-button icon-button"
                         onClick={() => handleEditChallenge(challenge)}
+                        title="Edit Challenge"
                       >
-                        Edit Challenge
+                        ✏️
                       </button>
                       <button 
-                        className="delete-challenge-button"
+                        className="delete-challenge-button icon-button"
                         onClick={() => handleDeleteChallenge(challenge.id)}
+                        title="Delete Challenge"
                       >
-                        Delete Challenge
+                        🗑️
                       </button>
                     </>
                   )}

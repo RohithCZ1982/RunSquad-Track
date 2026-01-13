@@ -69,8 +69,29 @@
   z-index: 1;
 }
 
+/* Hide separator after last letter of "Run" (before shoe) */
+.stylized-runsquad .letter.last-before-shoe::after {
+  display: none;
+}
+
 /* Hide separator after last letter */
-.stylized-runsquad .letter:last-child::after {
+.stylized-runsquad .letter.last-letter::after {
+  display: none;
+}
+
+/* Shoe symbol styling */
+.stylized-runsquad .shoe-symbol {
+  position: relative;
+  display: inline-block;
+  font-size: 0.9em;
+  margin: 0 0.1em;
+  vertical-align: middle;
+  transform: translateZ(0);
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+}
+
+/* Hide separator before shoe symbol */
+.stylized-runsquad .shoe-symbol::before {
   display: none;
 }
 
