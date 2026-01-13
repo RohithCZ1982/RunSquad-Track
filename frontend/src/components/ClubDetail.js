@@ -387,6 +387,21 @@ function ClubDetail() {
                         {run.location && <p>📍 {run.location}</p>}
                         <p>Created by: {run.created_by?.name || 'Unknown'}</p>
                         <p>{run.participant_count} participants</p>
+                        {run.is_participating ? (
+                          <button 
+                            className="leave-run-button"
+                            onClick={() => handleLeaveScheduledRun(run.id)}
+                          >
+                            Leave Run
+                          </button>
+                        ) : (
+                          <button 
+                            className="join-run-button"
+                            onClick={() => handleJoinScheduledRun(run.id)}
+                          >
+                            Join Run
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
