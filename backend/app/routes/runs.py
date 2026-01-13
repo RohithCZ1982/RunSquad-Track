@@ -48,18 +48,26 @@ def track_run():
     db.session.add(run)
     db.session.commit()
     
-    # Create activities in user's clubs
-    user = User.query.get(user_id)
-    for club in user.clubs:
-        activity = Activity(
-            club_id=club.id,
-            user_id=user_id,
-            activity_type='run',
-            description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
-        )
-        db.session.add(activity)
-    
-    db.session.commit()
+    # Create activity only in specified club (if club_id is provided)
+    club_id = data.get('club_id')
+    if club_id:
+        # Verify club exists and user is a member
+        club = Club.query.get(club_id)
+        if club:
+            is_member = db.session.query(club_members).filter_by(
+                user_id=user_id, club_id=club_id
+            ).first() is not None
+            
+            if is_member:
+                user = User.query.get(user_id)
+                activity = Activity(
+                    club_id=club_id,
+                    user_id=user_id,
+                    activity_type='run',
+                    description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
+                )
+                db.session.add(activity)
+                db.session.commit()
     
     response = jsonify({
         'id': run.id,
@@ -485,20 +493,6 @@ def update_run(run_id):
         # Recalculate speed
         if 'distance_km' in data or 'duration_minutes' in data:
             run.speed_kmh = (run.distance_km / run.duration_minutes) * 60 if run.duration_minutes > 0 else 0
-        
-        db.session.commit()
-        
-        # Update activities in user's clubs - create new activity for the updated run
-        user = User.query.get(user_id)
-        for club in user.clubs:
-            # Create new activity for the updated run
-            activity = Activity(
-                club_id=club.id,
-                user_id=user_id,
-                activity_type='run',
-                description=f'{user.name} ran {run.distance_km:.2f} km at {run.speed_kmh:.2f} km/h'
-            )
-            db.session.add(activity)
         
         db.session.commit()
         

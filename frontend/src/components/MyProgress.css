@@ -507,6 +507,142 @@
   transform: translateY(0);
 }
 
+.track-run-button {
+  padding: 12px 24px;
+  background: #1f2937;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.track-run-button:hover {
+  background: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.track-run-button span {
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.track-options-modal {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.track-options-modal h3 {
+  color: #1f2937;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.track-options-modal > p {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 24px 0;
+}
+
+.track-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.track-option-button {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.track-option-button:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.track-option-button.manual:hover {
+  border-color: #3b82f6;
+}
+
+.track-option-button.gps:hover {
+  border-color: #10b981;
+}
+
+.option-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.track-option-button h4 {
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.track-option-button p {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+.track-options-modal .close-button {
+  width: 100%;
+  padding: 12px 24px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.track-options-modal .close-button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.gps-tracker-modal {
+  background: transparent;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 .performance-graph-section {
   max-width: 100%;
   margin: 24px 16px;

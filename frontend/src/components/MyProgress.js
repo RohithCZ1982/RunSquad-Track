@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import GPSTracker from './GPSTracker';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -37,6 +38,8 @@ function MyProgress() {
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showTrackOptions, setShowTrackOptions] = useState(false);
+  const [showGPSTracker, setShowGPSTracker] = useState(false);
   const [editingRun, setEditingRun] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [chartType, setChartType] = useState('distance'); // 'distance', 'speed', 'performance'
@@ -132,6 +135,26 @@ function MyProgress() {
     setDuration('');
     setNotes('');
     setDate('');
+  };
+
+  const handleGPSTrack = () => {
+    setShowGPSTracker(true);
+    setShowTrackOptions(false);
+  };
+
+  const handleGPSSave = async (runData) => {
+    try {
+      await api.post('/runs/track', runData);
+      setShowGPSTracker(false);
+      fetchProgress();
+    } catch (err) {
+      console.error('Error saving GPS run:', err);
+      throw err; // Re-throw so GPSTracker can handle it
+    }
+  };
+
+  const handleGPSCancel = () => {
+    setShowGPSTracker(false);
   };
 
   // Prepare chart data - get last 10 runs for better visualization
@@ -439,10 +462,62 @@ function MyProgress() {
       <header className="progress-header">
         <button onClick={() => navigate('/dashboard')}>← Back</button>
         <h1>My Progress</h1>
-        <button onClick={() => setShowForm(true)} className="primary-button">
-          Track Run
+        <button onClick={() => setShowTrackOptions(true)} className="track-run-button">
+          <span>+</span> Track Run
         </button>
       </header>
+
+      {showTrackOptions && (
+        <div className="modal-overlay" onClick={() => setShowTrackOptions(false)}>
+          <div className="track-options-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Track Your Run</h3>
+            <p>Choose how you want to track your run:</p>
+            <div className="track-options">
+              <button 
+                className="track-option-button manual"
+                onClick={() => {
+                  setShowTrackOptions(false);
+                  setShowForm(true);
+                }}
+              >
+                <span className="option-icon">✏️</span>
+                <div>
+                  <h4>Track Manually</h4>
+                  <p>Enter distance, time, notes, and date</p>
+                </div>
+              </button>
+              <button 
+                className="track-option-button gps"
+                onClick={handleGPSTrack}
+              >
+                <span className="option-icon">📍</span>
+                <div>
+                  <h4>Track Run (GPS)</h4>
+                  <p>Use GPS to track your run in real-time</p>
+                </div>
+              </button>
+            </div>
+            <button 
+              className="close-button"
+              onClick={() => setShowTrackOptions(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showGPSTracker && (
+        <div className="modal-overlay" onClick={() => setShowGPSTracker(false)}>
+          <div className="gps-tracker-modal" onClick={(e) => e.stopPropagation()}>
+            <GPSTracker
+              clubId={null}
+              onSave={handleGPSSave}
+              onCancel={handleGPSCancel}
+            />
+          </div>
+        </div>
+      )}
 
       {statistics && (
         <div className="statistics">

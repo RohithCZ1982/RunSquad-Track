@@ -64,7 +64,8 @@ function ActivityFeed({ clubId }) {
         distance_km: parseFloat(distance),
         duration_minutes: parseFloat(duration),
         notes: notes || undefined,
-        date: formattedDate || undefined
+        date: formattedDate || undefined,
+        club_id: clubId || undefined
       });
 
       // Reset form
@@ -90,7 +91,10 @@ function ActivityFeed({ clubId }) {
 
   const handleGPSSave = async (runData) => {
     try {
-      await api.post('/runs/track', runData);
+      await api.post('/runs/track', {
+        ...runData,
+        club_id: clubId || undefined
+      });
       setShowGPSTracker(false);
       fetchActivities();
     } catch (err) {
