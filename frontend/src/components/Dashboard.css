@@ -4,6 +4,24 @@
   padding-bottom: 20px;
 }
 
+/* RunSquad Top Header - Consistent across all pages */
+.runsquad-top-header {
+  background: white;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.runsquad-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+}
+
 .dashboard-hero {
   position: relative;
   height: 200px;
@@ -130,8 +148,13 @@
 
 /* Mobile-first responsive design */
 @media (max-width: 768px) {
+  .runsquad-top-header {
+    padding: 12px 16px;
+  }
+
   .dashboard-header {
     padding: 12px 16px;
+    top: 56px;
   }
 
   .dashboard-header h1 {

@@ -5,6 +5,7 @@ import ScheduleRun from './ScheduleRun';
 import ActivityFeed from './ActivityFeed';
 import ChallengeList from './ChallengeList';
 import CreateChallenge from './CreateChallenge';
+import StylizedText from './StylizedText';
 import './ClubDetail.css';
 
 function ClubDetail() {
@@ -118,6 +119,24 @@ function ClubDetail() {
 
   return (
     <div className="club-detail-container">
+      {/* RunSquad Header with Blue Icon - Top of Page */}
+      <header className="runsquad-top-header">
+        <div className="runsquad-header-content">
+          <svg className="waveform-icon" viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
+            <path 
+              d="M 0 20 L 15 20 L 20 5 L 25 35 L 30 10 L 35 30 L 40 15 L 45 25 L 50 20 L 100 20" 
+              stroke="#3b82f6" 
+              strokeWidth="4" 
+              fill="none" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <StylizedText text="RunSquad" size="small" variant="light-bg" />
+        </div>
+      </header>
+
+      {/* Hero Section */}
       <div className="club-hero">
         <div className="club-hero-content">
           <h2>{club.name}</h2>
@@ -125,6 +144,7 @@ function ClubDetail() {
         </div>
       </div>
 
+      {/* Name and Buttons Section */}
       <header className="club-header">
         <div className="header-actions">
           <button onClick={() => navigate('/dashboard')} className="back-button">
