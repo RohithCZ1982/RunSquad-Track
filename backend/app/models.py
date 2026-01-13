@@ -9,6 +9,13 @@ club_members = db.Table('club_members',
     db.Column('joined_at', db.DateTime, default=datetime.utcnow)
 )
 
+# Association table for club admins (additional admins beyond the creator)
+club_admins = db.Table('club_admins',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('club_id', db.Integer, db.ForeignKey('club.id'), primary_key=True),
+    db.Column('promoted_at', db.DateTime, default=datetime.utcnow)
+)
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
@@ -78,3 +85,54 @@ class Activity(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref='activities')
+
+class Challenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('club.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    challenge_type = db.Column(db.String(50), nullable=False)  # 'weekly_mileage', 'fastest_5k', 'total_distance', 'total_time'
+    goal_value = db.Column(db.Float, nullable=False)  # Goal in km, minutes, etc.
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    participants = db.relationship('ChallengeParticipant', backref='challenge', lazy=True, cascade='all, delete-orphan')
+    
+    club = db.relationship('Club', backref='challenges')
+
+class ChallengeParticipant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenge.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    progress_value = db.Column(db.Float, default=0.0)  # Current progress (km, minutes, etc.)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='challenge_participations')
+    
+    __table_args__ = (db.UniqueConstraint('challenge_id', 'user_id', name='_challenge_user_uc'),)
+
+class LiveRunSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    club_id = db.Column(db.Integer, db.ForeignKey('club.id'), nullable=True)  # Optional - for club sharing
+    started_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    last_location_update = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='active')  # 'active', 'paused', 'stopped'
+    
+    # Relationships
+    user = db.relationship('User', backref='live_sessions')
+    club = db.relationship('Club', backref='active_live_sessions')
+    locations = db.relationship('LiveRunLocation', backref='session', lazy=True, cascade='all, delete-orphan', order_by='LiveRunLocation.timestamp')
+
+class LiveRunLocation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('live_run_session.id'), nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    accuracy = db.Column(db.Float)
+    speed = db.Column(db.Float)  # km/h
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

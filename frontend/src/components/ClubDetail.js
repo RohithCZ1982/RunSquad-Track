@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import ScheduleRun from './ScheduleRun';
 import ActivityFeed from './ActivityFeed';
+import ChallengeList from './ChallengeList';
+import CreateChallenge from './CreateChallenge';
 import './ClubDetail.css';
 
 function ClubDetail() {
@@ -17,6 +19,7 @@ function ClubDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteRunConfirm, setDeleteRunConfirm] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showCreateChallenge, setShowCreateChallenge] = useState(false);
 
   const fetchClub = useCallback(async () => {
     try {
@@ -51,6 +54,17 @@ function ClubDetail() {
     fetchClub();
     fetchScheduledRuns();
   }, [id, fetchClub, fetchScheduledRuns]);
+
+  const handlePromoteMember = async (memberId) => {
+    try {
+      await api.post(`/clubs/${id}/members/${memberId}/promote`);
+      // Refresh club data to get updated admin status
+      fetchClub();
+    } catch (err) {
+      console.error('Error promoting member:', err);
+      alert(err.response?.data?.error || 'Failed to promote member');
+    }
+  };
 
 
   const handleDeleteClub = async () => {
@@ -110,7 +124,7 @@ function ClubDetail() {
                 Delete Club
               </button>
             )}
-            {!club.is_creator && (
+            {!club.is_admin && !club.is_creator && (
               <button className="leave-button">Leave Club</button>
             )}
           </div>
@@ -206,6 +220,13 @@ function ClubDetail() {
             <span className="tab-icon">👥</span>
             Members
           </button>
+          <button
+            className={`tab ${activeTab === 'challenges' ? 'active' : ''}`}
+            onClick={() => setActiveTab('challenges')}
+          >
+            <span className="tab-icon">🏆</span>
+            Challenges
+          </button>
         </div>
 
         <div className="tab-content">
@@ -289,16 +310,58 @@ function ClubDetail() {
                   <div key={member.id} className="member-card">
                     <div className="member-avatar">{member.name.charAt(0).toUpperCase()}</div>
                     <div className="member-info">
-                      <h3>{member.name}</h3>
+                      <div className="member-name-row">
+                        <h3>{member.name}</h3>
+                        {member.is_admin && <span className="admin-badge">Admin</span>}
+                      </div>
                       <p>{member.email}</p>
                     </div>
+                    {club.is_admin && !member.is_admin && currentUser && currentUser.id !== member.id && (
+                      <button 
+                        className="promote-button"
+                        onClick={() => handlePromoteMember(member.id)}
+                      >
+                        Make Admin
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {activeTab === 'challenges' && (
+            <div className="challenges-section">
+              {club.is_admin && (
+                <div className="section-header">
+                  <button 
+                    onClick={() => setShowCreateChallenge(true)} 
+                    className="schedule-button"
+                  >
+                    <span>+</span> Create Challenge
+                  </button>
+                </div>
+              )}
+              <ChallengeList 
+                clubId={id} 
+                isAdmin={club.is_admin}
+                onJoinChallenge={() => {}}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {showCreateChallenge && (
+        <CreateChallenge
+          clubId={id}
+          onClose={() => setShowCreateChallenge(false)}
+          onSuccess={() => {
+            setShowCreateChallenge(false);
+            // ChallengeList will refresh automatically via useEffect
+          }}
+        />
+      )}
     </div>
   );
 }

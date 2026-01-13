@@ -1,11 +1,25 @@
 from flask import Blueprint, request, jsonify
 from app.database import db
-from app.models import Club, User, club_members, Activity
+from app.models import Club, User, club_members, club_admins, Activity
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 clubs_bp = Blueprint('clubs', __name__)
 
 # OPTIONS is handled globally in __init__.py before_request
+
+def is_club_admin(club_id, user_id):
+    """Check if a user is an admin of a club (creator or in club_admins table)"""
+    club = Club.query.get(club_id)
+    if not club:
+        return False
+    # Creator is always an admin
+    if club.created_by == user_id:
+        return True
+    # Check if user is in club_admins table
+    is_admin = db.session.query(club_admins).filter_by(
+        user_id=user_id, club_id=club_id
+    ).first() is not None
+    return is_admin
 
 @clubs_bp.route('', methods=['GET'])
 @jwt_required()
@@ -165,13 +179,24 @@ def get_club(club_id):
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 404
     
+    # Get all admin user IDs (creator + club_admins)
+    admin_user_ids = set()
+    admin_user_ids.add(club.created_by)
+    admin_rows = db.session.query(club_admins).filter_by(club_id=club_id).all()
+    for admin_row in admin_rows:
+        admin_user_ids.add(admin_row.user_id)
+    
     members = []
     for member in club.members:
+        is_member_admin = member.id in admin_user_ids
         members.append({
             'id': member.id,
             'name': member.name,
-            'email': member.email
+            'email': member.email,
+            'is_admin': is_member_admin
         })
+    
+    current_user_is_admin = is_club_admin(club_id, user_id)
     
     response = jsonify({
         'id': club.id,
@@ -182,7 +207,8 @@ def get_club(club_id):
         'member_count': len(members),
         'created_at': club.created_at.isoformat(),
         'created_by': club.created_by,
-        'is_creator': club.created_by == user_id
+        'is_creator': club.created_by == user_id,
+        'is_admin': current_user_is_admin
     })
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
@@ -295,3 +321,79 @@ def delete_club(club_id):
         response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response, 500
+
+@clubs_bp.route('/<int:club_id>/members/<int:member_id>/promote', methods=['POST'])
+@jwt_required()
+def promote_member_to_admin(club_id, member_id):
+    """Promote a member to admin (admin only)"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    club = Club.query.get(club_id)
+    if not club:
+        response = jsonify({'error': 'Club not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    # Check if current user is an admin
+    if not is_club_admin(club_id, user_id):
+        response = jsonify({'error': 'Only club admins can promote members'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 403
+    
+    # Check if member exists and is a member of the club
+    member = User.query.get(member_id)
+    if not member:
+        response = jsonify({'error': 'Member not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    is_member = db.session.query(club_members).filter_by(
+        user_id=member_id, club_id=club_id
+    ).first() is not None
+    
+    if not is_member:
+        response = jsonify({'error': 'User is not a member of this club'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Check if already an admin (creator is always admin, so skip if creator)
+    if club.created_by == member_id:
+        response = jsonify({'error': 'Club creator is already an admin'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Check if already in club_admins table
+    already_admin = db.session.query(club_admins).filter_by(
+        user_id=member_id, club_id=club_id
+    ).first() is not None
+    
+    if already_admin:
+        response = jsonify({'error': 'Member is already an admin'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Add to club_admins table
+    insert_stmt = club_admins.insert().values(user_id=member_id, club_id=club_id)
+    db.session.execute(insert_stmt)
+    
+    # Create activity
+    promoter = User.query.get(user_id)
+    activity = Activity(
+        club_id=club_id,
+        user_id=user_id,
+        activity_type='admin',
+        description=f'{promoter.name} promoted {member.name} to admin'
+    )
+    db.session.add(activity)
+    
+    db.session.commit()
+    
+    response = jsonify({'message': 'Member promoted to admin successfully'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response, 200

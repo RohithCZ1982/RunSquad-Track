@@ -69,6 +69,55 @@ def track_run():
                 db.session.add(activity)
                 db.session.commit()
     
+    # Update challenge progress for all active challenges
+    try:
+        from datetime import datetime
+        from app.models import Challenge, ChallengeParticipant
+        
+        now = datetime.utcnow()
+        participants = db.session.query(ChallengeParticipant).join(Challenge).filter(
+            ChallengeParticipant.user_id == user_id,
+            Challenge.start_date <= now,
+            Challenge.end_date >= now
+        ).all()
+        
+        # Update progress for each challenge
+        for participant in participants:
+            challenge = Challenge.query.get(participant.challenge_id)
+            if not challenge:
+                continue
+            
+            # Get runs within challenge date range
+            challenge_runs = Run.query.filter(
+                Run.user_id == user_id,
+                Run.date >= challenge.start_date,
+                Run.date <= challenge.end_date
+            ).all()
+            
+            progress = 0.0
+            
+            if challenge.challenge_type == 'weekly_mileage':
+                progress = sum(run.distance_km for run in challenge_runs)
+            elif challenge.challenge_type == 'fastest_5k':
+                fastest_time = None
+                for run in challenge_runs:
+                    if 4.5 <= run.distance_km <= 5.5:
+                        time_minutes = run.duration_minutes
+                        if fastest_time is None or time_minutes < fastest_time:
+                            fastest_time = time_minutes
+                progress = fastest_time if fastest_time else 0
+            elif challenge.challenge_type == 'total_distance':
+                progress = sum(run.distance_km for run in challenge_runs)
+            elif challenge.challenge_type == 'total_time':
+                progress = sum(run.duration_minutes for run in challenge_runs)
+            
+            participant.progress_value = progress
+        
+        db.session.commit()
+    except Exception as e:
+        print(f"Error updating challenge progress: {e}")
+        # Don't fail the run tracking if challenge update fails
+    
     response = jsonify({
         'id': run.id,
         'distance_km': run.distance_km,

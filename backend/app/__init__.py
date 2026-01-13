@@ -96,11 +96,13 @@ def create_app():
         from app.routes.clubs import clubs_bp
         from app.routes.runs import runs_bp
         from app.routes.users import users_bp
+        from app.routes.challenges import challenges_bp
         
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
         app.register_blueprint(clubs_bp, url_prefix='/api/clubs')
         app.register_blueprint(runs_bp, url_prefix='/api/runs')
         app.register_blueprint(users_bp, url_prefix='/api/users')
+        app.register_blueprint(challenges_bp, url_prefix='/api/challenges')
         
         print("✅ All blueprints registered successfully")
         print("Registered routes:")

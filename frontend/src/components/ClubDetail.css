@@ -655,6 +655,7 @@
   border: 1px solid #e5e7eb;
   transition: all 0.2s;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .member-card:hover {
@@ -681,17 +682,52 @@
   flex: 1;
 }
 
+.member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .member-info h3 {
   color: #1f2937;
   font-size: 16px;
   font-weight: 600;
-  margin: 0 0 4px 0;
+  margin: 0;
+}
+
+.admin-badge {
+  background: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .member-info p {
   color: #6b7280;
   font-size: 14px;
   margin: 0;
+}
+
+.promote-button {
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.promote-button:hover {
+  background: #2563eb;
 }
 
 .loading {
