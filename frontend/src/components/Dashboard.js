@@ -153,6 +153,9 @@ function Dashboard() {
           <button onClick={() => setShowCreateClub(true)} className="primary-button">
             Create Club
           </button>
+          <button onClick={() => navigate('/bulk-import')} className="secondary-button">
+            Bulk Import Users
+          </button>
         </div>
 
         {showCreateClub && (

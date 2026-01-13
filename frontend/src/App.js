@@ -4,6 +4,7 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import MyProgress from './components/MyProgress';
 import ClubDetail from './components/ClubDetail';
+import BulkImportUsers from './components/BulkImportUsers';
 import './App.css';
 
 // Protected Route Component with better localStorage handling
@@ -89,6 +90,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ClubDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bulk-import"
+            element={
+              <ProtectedRoute>
+                <BulkImportUsers />
               </ProtectedRoute>
             }
           />
