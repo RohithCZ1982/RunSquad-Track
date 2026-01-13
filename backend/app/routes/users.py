@@ -1,10 +1,75 @@
 from flask import Blueprint, request, jsonify
 from app.database import db
-from app.models import Activity, Run, User
+from app.models import Activity, Run, User, Challenge, ChallengeParticipant
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime
 import re
 
 users_bp = Blueprint('users', __name__)
+
+@users_bp.route('/badges', methods=['GET'])
+@jwt_required()
+def get_user_badges():
+    """Get badge counts (gold, silver, bronze) for the current user"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    # Get all challenges the user has participated in
+    participants = ChallengeParticipant.query.filter_by(user_id=user_id).all()
+    
+    gold_count = 0
+    silver_count = 0
+    bronze_count = 0
+    
+    # For each challenge, calculate the user's rank
+    for participant in participants:
+        challenge = Challenge.query.get(participant.challenge_id)
+        if not challenge:
+            continue
+        
+        # Skip challenges that haven't ended yet (only count final results)
+        now = datetime.utcnow()
+        if challenge.end_date > now:
+            continue
+        
+        # Get all participants for this challenge
+        all_participants = ChallengeParticipant.query.filter_by(challenge_id=challenge.id).all()
+        
+        # Sort by progress (descending for distance/time, ascending for fastest_5k)
+        if challenge.challenge_type == 'fastest_5k':
+            # For fastest 5K, lowest time wins
+            all_participants.sort(key=lambda p: p.progress_value if p.progress_value > 0 else float('inf'))
+        else:
+            # For distance/time challenges, highest progress wins
+            all_participants.sort(key=lambda p: p.progress_value, reverse=True)
+        
+        # Find user's rank
+        user_rank = None
+        for rank, p in enumerate(all_participants, 1):
+            if p.user_id == user_id:
+                user_rank = rank
+                break
+        
+        # Count badges (only for top 3)
+        if user_rank == 1:
+            gold_count += 1
+        elif user_rank == 2:
+            silver_count += 1
+        elif user_rank == 3:
+            bronze_count += 1
+    
+    response = jsonify({
+        'gold': gold_count,
+        'silver': silver_count,
+        'bronze': bronze_count
+    })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response, 200
 
 @users_bp.route('/activity-feed/<int:club_id>', methods=['GET'])
 @jwt_required()

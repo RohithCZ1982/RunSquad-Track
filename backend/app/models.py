@@ -112,8 +112,24 @@ class ChallengeParticipant(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='challenge_participations')
+    progress_entries = db.relationship('ChallengeProgressEntry', backref='participant', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (db.UniqueConstraint('challenge_id', 'user_id', name='_challenge_user_uc'),)
+
+class ChallengeProgressEntry(db.Model):
+    """Manual progress entries for challenges with optional images"""
+    id = db.Column(db.Integer, primary_key=True)
+    participant_id = db.Column(db.Integer, db.ForeignKey('challenge_participant.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenge.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    progress_value = db.Column(db.Float, nullable=False)  # Progress added in this entry
+    notes = db.Column(db.Text)
+    image_url = db.Column(db.Text)  # Base64 encoded image or URL
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    challenge = db.relationship('Challenge', backref='progress_entries')
+    user = db.relationship('User', backref='challenge_progress_entries')
 
 class LiveRunSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)

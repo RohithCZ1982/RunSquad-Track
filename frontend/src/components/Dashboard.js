@@ -9,6 +9,7 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [showCreateClub, setShowCreateClub] = useState(false);
   const [clubs, setClubs] = useState([]);
+  const [badges, setBadges] = useState({ gold: 0, silver: 0, bronze: 0 });
   const navigate = useNavigate();
 
   const fetchClubs = useCallback(async () => {
@@ -53,6 +54,17 @@ function Dashboard() {
     }
   }, [navigate]);
 
+  const fetchBadges = useCallback(async () => {
+    try {
+      const response = await api.get('/users/badges');
+      setBadges(response.data);
+    } catch (err) {
+      console.error('Error fetching badges:', err);
+      // Don't show error to user, just set to 0
+      setBadges({ gold: 0, silver: 0, bronze: 0 });
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     
@@ -73,7 +85,8 @@ function Dashboard() {
     }
     
     fetchClubs();
-  }, [navigate, fetchClubs]);
+    fetchBadges();
+  }, [navigate, fetchClubs, fetchBadges]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -107,7 +120,29 @@ function Dashboard() {
           </h1>
         </div>
         <div className="header-bottom">
-          <span className="user-name">{user?.name || 'User'}</span>
+          <div className="user-info">
+            <span className="user-name">{user?.name || 'User'}</span>
+            <div className="user-badges">
+              {badges.gold > 0 && (
+                <div className="badge-item gold">
+                  <span className="badge-icon">🥇</span>
+                  <span className="badge-count">{badges.gold}</span>
+                </div>
+              )}
+              {badges.silver > 0 && (
+                <div className="badge-item silver">
+                  <span className="badge-icon">🥈</span>
+                  <span className="badge-count">{badges.silver}</span>
+                </div>
+              )}
+              {badges.bronze > 0 && (
+                <div className="badge-item bronze">
+                  <span className="badge-icon">🥉</span>
+                  <span className="badge-count">{badges.bronze}</span>
+                </div>
+              )}
+            </div>
+          </div>
           <button onClick={() => navigate('/progress')} className="header-button">My Progress</button>
           <button onClick={handleLogout} className="header-button">Logout</button>
         </div>

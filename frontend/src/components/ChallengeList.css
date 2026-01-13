@@ -180,7 +180,8 @@
 }
 
 .join-challenge-button,
-.view-leaderboard-button {
+.view-leaderboard-button,
+.track-progress-button {
   flex: 1;
   padding: 12px 20px;
   border: none;
@@ -211,6 +212,17 @@
   background: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.track-progress-button {
+  background: #10b981;
+  color: white;
+}
+
+.track-progress-button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .leaderboard-modal {
@@ -313,6 +325,178 @@
   border-color: #9ca3af;
 }
 
+
+.track-progress-modal {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.track-progress-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.track-progress-modal .modal-header h2 {
+  color: #1f2937;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.track-progress-modal .modal-header .close-button {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.track-progress-modal .modal-header .close-button:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.track-progress-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.track-progress-modal .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.track-progress-modal .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.track-progress-modal .form-group input[type="number"],
+.track-progress-modal .form-group input[type="file"],
+.track-progress-modal .form-group textarea {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1f2937;
+  transition: all 0.2s;
+}
+
+.track-progress-modal .form-group input:focus,
+.track-progress-modal .form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.track-progress-modal .form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.track-progress-modal .form-hint {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.image-preview-container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  object-fit: contain;
+}
+
+.remove-image-button {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-image-button:hover {
+  background: #fecaca;
+}
+
+.track-progress-modal .error-message {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #fecaca;
+  margin-bottom: 20px;
+}
+
+.track-progress-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.track-progress-modal .modal-actions button {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.track-progress-modal .modal-actions button[type="button"] {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.track-progress-modal .modal-actions button[type="button"]:hover {
+  background: #e5e7eb;
+}
+
+.track-progress-modal .modal-actions button[type="submit"] {
+  background: #3b82f6;
+  color: white;
+}
+
+.track-progress-modal .modal-actions button[type="submit"]:hover {
+  background: #2563eb;
+}
+
 @media (max-width: 768px) {
   .challenges-grid {
     grid-template-columns: 1fr;
@@ -325,5 +509,14 @@
   .leaderboard-modal {
     padding: 24px;
     max-height: 90vh;
+  }
+
+  .challenge-actions {
+    flex-direction: column;
+  }
+
+  .track-progress-button,
+  .view-leaderboard-button {
+    width: 100%;
   }
 }

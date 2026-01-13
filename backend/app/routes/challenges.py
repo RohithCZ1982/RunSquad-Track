@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.database import db
-from app.models import Challenge, ChallengeParticipant, User, Club, Run, Activity, club_members, club_admins
+from app.models import Challenge, ChallengeParticipant, ChallengeProgressEntry, User, Club, Run, Activity, club_members, club_admins
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 
@@ -375,3 +375,108 @@ def update_all_challenge_progress():
     response = jsonify({'message': 'Progress updated'})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
+
+@challenges_bp.route('/<int:challenge_id>/track', methods=['POST'])
+@jwt_required()
+def track_challenge_progress(challenge_id):
+    """Manually track progress for a challenge with optional image"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    try:
+        data = request.get_json()
+        
+        if not data or data.get('progress_value') is None:
+            response = jsonify({'error': 'Progress value is required'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
+        challenge = Challenge.query.get(challenge_id)
+        if not challenge:
+            response = jsonify({'error': 'Challenge not found'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 404
+        
+        # Check if user is participating
+        participant = ChallengeParticipant.query.filter_by(
+            challenge_id=challenge_id, user_id=user_id
+        ).first()
+        
+        if not participant:
+            response = jsonify({'error': 'You must join the challenge first'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 403
+        
+        # Check if challenge is still active
+        now = datetime.utcnow()
+        if now > challenge.end_date:
+            response = jsonify({'error': 'This challenge has ended'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
+        progress_value = float(data['progress_value'])
+        notes = data.get('notes')
+        image_data = data.get('image')  # Base64 encoded image
+        
+        # Store image if provided (limit to 5MB to avoid database bloat)
+        image_url = None
+        if image_data:
+            # Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
+            if ',' in image_data:
+                image_data = image_data.split(',')[1]
+            
+            # Decode to check size (approx 4 bytes per 3 base64 chars)
+            image_size = len(image_data) * 3 / 4
+            if image_size > 5 * 1024 * 1024:  # 5MB limit
+                response = jsonify({'error': 'Image too large. Maximum size is 5MB'})
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response, 400
+            
+            image_url = image_data  # Store base64 string
+        
+        # Create progress entry
+        entry = ChallengeProgressEntry(
+            participant_id=participant.id,
+            challenge_id=challenge_id,
+            user_id=user_id,
+            progress_value=progress_value,
+            notes=notes,
+            image_url=image_url
+        )
+        
+        db.session.add(entry)
+        
+        # Update participant's total progress
+        # For distance/time challenges: add to total
+        # For fastest_5k: take minimum (handled separately)
+        if challenge.challenge_type == 'fastest_5k':
+            # For fastest 5K, update only if this is faster
+            if participant.progress_value == 0 or progress_value < participant.progress_value:
+                participant.progress_value = progress_value
+        else:
+            # For distance/time challenges, add to existing progress
+            participant.progress_value = participant.progress_value + progress_value
+        
+        db.session.commit()
+        
+        response = jsonify({
+            'message': 'Progress tracked successfully',
+            'entry_id': entry.id,
+            'total_progress': participant.progress_value
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 201
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error tracking challenge progress: {e}")
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to track progress: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500

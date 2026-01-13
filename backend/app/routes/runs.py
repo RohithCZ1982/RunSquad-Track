@@ -18,115 +18,131 @@ def track_run():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 401
     
-    data = request.get_json()
-    
-    if not data or not data.get('distance_km') or not data.get('duration_minutes'):
-        response = jsonify({'error': 'Missing distance or duration'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 400
-    
-    distance = float(data['distance_km'])
-    duration = float(data['duration_minutes'])
-    speed_kmh = (distance / duration) * 60 if duration > 0 else 0
-    
-    run_date = datetime.utcnow()
-    if data.get('date'):
-        try:
-            run_date = datetime.fromisoformat(data['date'].replace('Z', '+00:00'))
-        except:
-            run_date = datetime.utcnow()
-    
-    run = Run(
-        user_id=user_id,
-        distance_km=distance,
-        duration_minutes=duration,
-        speed_kmh=speed_kmh,
-        notes=data.get('notes'),
-        date=run_date
-    )
-    
-    db.session.add(run)
-    db.session.commit()
-    
-    # Create activity only in specified club (if club_id is provided)
-    club_id = data.get('club_id')
-    if club_id:
-        # Verify club exists and user is a member
-        club = Club.query.get(club_id)
-        if club:
-            is_member = db.session.query(club_members).filter_by(
-                user_id=user_id, club_id=club_id
-            ).first() is not None
-            
-            if is_member:
-                user = User.query.get(user_id)
-                activity = Activity(
-                    club_id=club_id,
-                    user_id=user_id,
-                    activity_type='run',
-                    description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
-                )
-                db.session.add(activity)
-                db.session.commit()
-    
-    # Update challenge progress for all active challenges
     try:
-        from datetime import datetime
-        from app.models import Challenge, ChallengeParticipant
+        data = request.get_json()
         
-        now = datetime.utcnow()
-        participants = db.session.query(ChallengeParticipant).join(Challenge).filter(
-            ChallengeParticipant.user_id == user_id,
-            Challenge.start_date <= now,
-            Challenge.end_date >= now
-        ).all()
+        if not data or not data.get('distance_km') or not data.get('duration_minutes'):
+            response = jsonify({'error': 'Missing distance or duration'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
         
-        # Update progress for each challenge
-        for participant in participants:
-            challenge = Challenge.query.get(participant.challenge_id)
-            if not challenge:
-                continue
+        distance = float(data['distance_km'])
+        duration = float(data['duration_minutes'])
+        speed_kmh = (distance / duration) * 60 if duration > 0 else 0
+        
+        run_date = datetime.utcnow()
+        if data.get('date'):
+            try:
+                run_date = datetime.fromisoformat(data['date'].replace('Z', '+00:00'))
+            except:
+                run_date = datetime.utcnow()
+        
+        run = Run(
+            user_id=user_id,
+            distance_km=distance,
+            duration_minutes=duration,
+            speed_kmh=speed_kmh,
+            notes=data.get('notes'),
+            date=run_date
+        )
+        
+        db.session.add(run)
+        db.session.commit()
+        
+        # Create activity only in specified club (if club_id is provided)
+        club_id = data.get('club_id')
+        if club_id:
+            try:
+                # Verify club exists and user is a member
+                club = Club.query.get(club_id)
+                if club:
+                    is_member = db.session.query(club_members).filter_by(
+                        user_id=user_id, club_id=club_id
+                    ).first() is not None
+                    
+                    if is_member:
+                        user = User.query.get(user_id)
+                        if user:
+                            activity = Activity(
+                                club_id=club_id,
+                                user_id=user_id,
+                                activity_type='run',
+                                description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
+                            )
+                            db.session.add(activity)
+                            db.session.commit()
+            except Exception as e:
+                print(f"Error creating club activity: {e}")
+                # Don't fail the run tracking if activity creation fails
+        
+        # Update challenge progress for all active challenges
+        try:
+            from app.models import Challenge, ChallengeParticipant
             
-            # Get runs within challenge date range
-            challenge_runs = Run.query.filter(
-                Run.user_id == user_id,
-                Run.date >= challenge.start_date,
-                Run.date <= challenge.end_date
+            now = datetime.utcnow()
+            participants = db.session.query(ChallengeParticipant).join(Challenge).filter(
+                ChallengeParticipant.user_id == user_id,
+                Challenge.start_date <= now,
+                Challenge.end_date >= now
             ).all()
             
-            progress = 0.0
+            # Update progress for each challenge
+            for participant in participants:
+                challenge = Challenge.query.get(participant.challenge_id)
+                if not challenge:
+                    continue
+                
+                # Get runs within challenge date range
+                challenge_runs = Run.query.filter(
+                    Run.user_id == user_id,
+                    Run.date >= challenge.start_date,
+                    Run.date <= challenge.end_date
+                ).all()
+                
+                progress = 0.0
+                
+                if challenge.challenge_type == 'weekly_mileage':
+                    progress = sum(run.distance_km for run in challenge_runs)
+                elif challenge.challenge_type == 'fastest_5k':
+                    fastest_time = None
+                    for run in challenge_runs:
+                        if 4.5 <= run.distance_km <= 5.5:
+                            time_minutes = run.duration_minutes
+                            if fastest_time is None or time_minutes < fastest_time:
+                                fastest_time = time_minutes
+                    progress = fastest_time if fastest_time else 0
+                elif challenge.challenge_type == 'total_distance':
+                    progress = sum(run.distance_km for run in challenge_runs)
+                elif challenge.challenge_type == 'total_time':
+                    progress = sum(run.duration_minutes for run in challenge_runs)
+                
+                participant.progress_value = progress
             
-            if challenge.challenge_type == 'weekly_mileage':
-                progress = sum(run.distance_km for run in challenge_runs)
-            elif challenge.challenge_type == 'fastest_5k':
-                fastest_time = None
-                for run in challenge_runs:
-                    if 4.5 <= run.distance_km <= 5.5:
-                        time_minutes = run.duration_minutes
-                        if fastest_time is None or time_minutes < fastest_time:
-                            fastest_time = time_minutes
-                progress = fastest_time if fastest_time else 0
-            elif challenge.challenge_type == 'total_distance':
-                progress = sum(run.distance_km for run in challenge_runs)
-            elif challenge.challenge_type == 'total_time':
-                progress = sum(run.duration_minutes for run in challenge_runs)
-            
-            participant.progress_value = progress
+            db.session.commit()
+        except Exception as e:
+            print(f"Error updating challenge progress: {e}")
+            import traceback
+            traceback.print_exc()
+            # Don't fail the run tracking if challenge update fails
         
-        db.session.commit()
+        response = jsonify({
+            'id': run.id,
+            'distance_km': run.distance_km,
+            'duration_minutes': run.duration_minutes,
+            'speed_kmh': run.speed_kmh,
+            'date': run.date.isoformat()
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 201
+        
     except Exception as e:
-        print(f"Error updating challenge progress: {e}")
-        # Don't fail the run tracking if challenge update fails
-    
-    response = jsonify({
-        'id': run.id,
-        'distance_km': run.distance_km,
-        'duration_minutes': run.duration_minutes,
-        'speed_kmh': run.speed_kmh,
-        'date': run.date.isoformat()
-    })
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response, 201
+        db.session.rollback()
+        import traceback
+        print(f"Error tracking run: {e}")
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to track run: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
 
 @runs_bp.route('/my-progress', methods=['GET'])
 @jwt_required()

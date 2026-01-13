@@ -7,6 +7,13 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [loading, setLoading] = useState(true);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
+  const [showTrackProgress, setShowTrackProgress] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [progressValue, setProgressValue] = useState('');
+  const [progressNotes, setProgressNotes] = useState('');
+  const [progressImage, setProgressImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [trackError, setTrackError] = useState('');
 
   const fetchChallenges = useCallback(async () => {
     try {
@@ -46,6 +53,67 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to fetch leaderboard');
     }
+  };
+
+  const handleTrackProgress = (challenge) => {
+    setSelectedChallenge(challenge);
+    setProgressValue('');
+    setProgressNotes('');
+    setProgressImage(null);
+    setImagePreview(null);
+    setTrackError('');
+    setShowTrackProgress(true);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setTrackError('Image size must be less than 5MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setProgressImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitProgress = async (e) => {
+    e.preventDefault();
+    setTrackError('');
+
+    if (!progressValue || parseFloat(progressValue) <= 0) {
+      setTrackError('Please enter a valid progress value');
+      return;
+    }
+
+    try {
+      await api.post(`/challenges/${selectedChallenge.id}/track`, {
+        progress_value: parseFloat(progressValue),
+        notes: progressNotes || undefined,
+        image: progressImage || undefined
+      });
+      
+      alert('Progress tracked successfully!');
+      setShowTrackProgress(false);
+      fetchChallenges();
+    } catch (err) {
+      setTrackError(err.response?.data?.error || 'Failed to track progress');
+    }
+  };
+
+  const getProgressLabel = (challengeType) => {
+    const labels = {
+      'weekly_mileage': 'Distance (km)',
+      'fastest_5k': 'Time (minutes)',
+      'total_distance': 'Distance (km)',
+      'total_time': 'Time (minutes)'
+    };
+    return labels[challengeType] || 'Progress';
   };
 
   const getChallengeTypeLabel = (type) => {
@@ -218,13 +286,21 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                       Join Challenge
                     </button>
                   )}
-                  {challenge.is_participating && (
-                    <button 
-                      className="view-leaderboard-button"
-                      onClick={() => handleViewLeaderboard(challenge.id)}
-                    >
-                      View Leaderboard
-                    </button>
+                  {challenge.is_participating && active && (
+                    <>
+                      <button 
+                        className="track-progress-button"
+                        onClick={() => handleTrackProgress(challenge)}
+                      >
+                        Track Progress
+                      </button>
+                      <button 
+                        className="view-leaderboard-button"
+                        onClick={() => handleViewLeaderboard(challenge.id)}
+                      >
+                        View Leaderboard
+                      </button>
+                    </>
                   )}
                   {!active && challenge.is_participating && (
                     <button 
@@ -238,6 +314,84 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {showTrackProgress && selectedChallenge && (
+        <div className="modal-overlay" onClick={() => setShowTrackProgress(false)}>
+          <div className="track-progress-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Track Progress - {selectedChallenge.title}</h2>
+              <button className="close-button" onClick={() => setShowTrackProgress(false)}>×</button>
+            </div>
+            
+            {trackError && <div className="error-message">{trackError}</div>}
+            
+            <form onSubmit={handleSubmitProgress}>
+              <div className="form-group">
+                <label>{getProgressLabel(selectedChallenge.challenge_type)} *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={`Enter ${getProgressLabel(selectedChallenge.challenge_type).toLowerCase()}`}
+                  value={progressValue}
+                  onChange={(e) => setProgressValue(e.target.value)}
+                  required
+                />
+                {selectedChallenge.challenge_type === 'fastest_5k' && (
+                  <small className="form-hint">Enter time in minutes (e.g., 25.5 for 25 minutes 30 seconds)</small>
+                )}
+                {selectedChallenge.challenge_type === 'total_time' && (
+                  <small className="form-hint">Enter time in minutes</small>
+                )}
+              </div>
+              
+              <div className="form-group">
+                <label>Notes (Optional)</label>
+                <textarea
+                  placeholder="Add notes about your progress..."
+                  value={progressNotes}
+                  onChange={(e) => setProgressNotes(e.target.value)}
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Image (Optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+                {imagePreview && (
+                  <div className="image-preview-container">
+                    <img src={imagePreview} alt="Preview" className="image-preview" />
+                    <button 
+                      type="button"
+                      className="remove-image-button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setProgressImage(null);
+                      }}
+                    >
+                      Remove Image
+                    </button>
+                  </div>
+                )}
+                <small className="form-hint">Maximum file size: 5MB</small>
+              </div>
+              
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowTrackProgress(false)}>
+                  Cancel
+                </button>
+                <button type="submit">
+                  Track Progress
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
