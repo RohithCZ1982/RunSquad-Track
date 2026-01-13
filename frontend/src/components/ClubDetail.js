@@ -146,7 +146,6 @@ function ClubDetail() {
 
       {/* Name and Buttons Section */}
       <header className="club-header">
-        <div className="header-actions">
           <button onClick={() => navigate('/dashboard')} className="back-button">
             ← Back to Dashboard
           </button>
@@ -168,7 +167,6 @@ function ClubDetail() {
               </button>
             )}
           </div>
-        </div>
       </header>
 
       {showDeleteConfirm && (
