@@ -26,6 +26,20 @@ def create_app():
          supports_credentials=False,  # Must be False with wildcard origin
          automatic_options=True)  # Automatically handle OPTIONS requests
     
+    # Allow OPTIONS requests to bypass JWT authentication (for CORS preflight)
+    # This must be before JWT checks to allow preflight requests
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            # Return empty 200 response with CORS headers
+            # This bypasses JWT validation for preflight requests
+            response = jsonify({})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+            response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+            response.headers.add("Access-Control-Max-Age", "3600")
+            return response, 200
+    
     # JWT error handlers - Flask-CORS will add headers automatically
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
