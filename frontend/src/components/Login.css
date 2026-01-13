@@ -9,7 +9,7 @@
 
 .login-card {
   background: white;
-  padding: 40px;
+  padding: 30px;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   width: 100%;
@@ -23,14 +23,14 @@
 
 .login-card h2 {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   color: #333;
 }
 
 .login-card form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
 .login-card input {
@@ -48,22 +48,58 @@
 
 .login-card button {
   padding: 12px;
-  background: #667eea;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f172a 100%);
   color: white;
-  border: none;
-  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 1px 0 rgba(255, 255, 255, 0.2) inset;
+}
+
+.login-card button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: 8px 8px 0 0;
 }
 
 .login-card button:hover {
-  background: #5568d3;
+  background: linear-gradient(135deg, #111827 0%, #0f172a 50%, #0a0e1a 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 1px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+.login-card button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 .login-card p {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 15px;
   color: #666;
 }
 
