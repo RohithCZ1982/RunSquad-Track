@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import GPSTracker from './GPSTracker';
+import StylizedText from './StylizedText';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -275,8 +276,45 @@ function MyProgress() {
     },
   });
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   return (
     <div className="progress-container">
+      {/* RunSquad Header with Blue Icon - Top of Page */}
+      <header className="runsquad-top-header">
+        <div className="runsquad-header-content">
+          <svg className="waveform-icon" viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
+            <path 
+              d="M 0 20 L 15 20 L 20 5 L 25 35 L 30 10 L 35 30 L 40 15 L 45 25 L 50 20 L 100 20" 
+              stroke="#3b82f6" 
+              strokeWidth="4" 
+              fill="none" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <StylizedText text="RunSquad" size="small" variant="light-bg" />
+        </div>
+        <button 
+          onClick={handleLogout} 
+          className="logout-btn"
+        >
+          <span className="btn-text">Log Out</span>
+          <div className="icon-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-log-out">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </div>
+        </button>
+      </header>
+
+      {/* Hero Section */}
       <div className="progress-hero">
         <div className="progress-hero-content">
           <h2>My Progress</h2>
@@ -284,12 +322,17 @@ function MyProgress() {
         </div>
       </div>
 
+      {/* Name and Buttons Section */}
       <header className="progress-header">
-        <button onClick={() => navigate('/dashboard')}>← Back</button>
-        <h1>My Progress</h1>
-        <button onClick={() => setShowTrackOptions(true)} className="track-run-button">
-          <span>+</span> Track Run
-        </button>
+        <div className="header-bottom">
+          <div className="user-info">
+            <span className="user-name">My Progress</span>
+          </div>
+          <button onClick={() => navigate('/dashboard')} className="header-button">← Back to Dashboard</button>
+          <button onClick={() => setShowTrackOptions(true)} className="track-run-button">
+            <span>+</span> Track Run
+          </button>
+        </div>
       </header>
 
       {showTrackOptions && (

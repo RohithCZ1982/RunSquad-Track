@@ -4,6 +4,33 @@
   padding-bottom: 20px;
 }
 
+/* RunSquad Top Header - Consistent across all pages */
+.runsquad-top-header {
+  background: white;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runsquad-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.runsquad-top-header .waveform-icon {
+  width: 32px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 .progress-hero {
   position: relative;
   height: 180px;
@@ -35,13 +62,120 @@
   background: white;
   padding: 16px 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 64px;
+  z-index: 100;
+}
+
+.header-bottom {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.user-name {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.header-button {
+  padding: 10px 20px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.header-button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Premium Logout Button with Glassmorphism */
+.logout-btn {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(209, 213, 219, 0.5);
+  border-radius: 50px;
+  color: #374151;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.logout-btn:hover {
+  background: rgba(255, 77, 77, 0.1);
+  border-color: #ff4d4d;
+  box-shadow: 0 0 20px rgba(255, 77, 77, 0.3), 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  color: #ff4d4d;
+}
+
+.btn-text {
+  transition: transform 0.3s ease;
+}
+
+.logout-btn:hover .btn-text {
+  transform: translateX(-5px);
+}
+
+.icon-container {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-btn:hover .icon-container {
+  animation: run-out 0.5s forwards;
+}
+
+@keyframes run-out {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(15px);
+    opacity: 0;
+  }
+  51% {
+    transform: translateX(-15px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.logout-btn:hover .icon-container svg {
+  stroke: #ff4d4d;
 }
 
 .progress-header button {
@@ -116,6 +250,25 @@
 
 /* Mobile-first responsive design */
 @media (max-width: 768px) {
+  .runsquad-top-header {
+    padding: 12px 16px;
+  }
+
+  .logout-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .logout-btn .btn-text {
+    display: none;
+  }
+
+  .logout-btn .icon-container {
+    margin: 0;
+  }
+
   .progress-hero {
     height: 160px;
   }
@@ -130,14 +283,18 @@
 
   .progress-header {
     padding: 12px 16px;
+    top: 56px;
+  }
+
+  .header-bottom {
     gap: 8px;
   }
 
-  .progress-header h1 {
-    font-size: 20px;
+  .user-name {
+    font-size: 14px;
   }
 
-  .progress-header button {
+  .header-button {
     padding: 8px 12px;
     font-size: 12px;
   }
