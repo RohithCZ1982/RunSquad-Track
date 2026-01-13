@@ -372,10 +372,11 @@ def bulk_import_users():
         required_columns = ['name', 'email', 'password']
         
         # Map normalized column name to index (0-indexed)
+        # Note: address column is skipped to avoid database errors
         for idx, cell_value in enumerate(header_row):
             if cell_value:
                 col_name = str(cell_value).strip().lower()
-                if col_name in ['name', 'email', 'password', 'address']:
+                if col_name in ['name', 'email', 'password']:
                     column_indices[col_name] = idx
         
         # Validate required columns
@@ -399,10 +400,10 @@ def bulk_import_users():
         for row_idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
             try:
                 # Get values (handle None/empty values)
+                # Note: address field is skipped to avoid database column errors
                 name = str(row[column_indices['name']]).strip() if column_indices['name'] < len(row) and row[column_indices['name']] is not None else None
                 email = str(row[column_indices['email']]).strip() if column_indices['email'] < len(row) and row[column_indices['email']] is not None else None
                 password = str(row[column_indices['password']]).strip() if column_indices['password'] < len(row) and row[column_indices['password']] is not None else None
-                address = str(row[column_indices['address']]).strip() if 'address' in column_indices and column_indices['address'] < len(row) and row[column_indices['address']] is not None else None
                 
                 # Validate required fields
                 if not name or not email or not password:
@@ -430,11 +431,10 @@ def bulk_import_users():
                     })
                     continue
                 
-                # Create new user
+                # Create new user (address field skipped to avoid database errors)
                 user = User(
                     email=email,
-                    name=name,
-                    address=address
+                    name=name
                 )
                 user.set_password(password)
                 
