@@ -460,3 +460,91 @@ def promote_member_to_admin(club_id, member_id):
     response = jsonify({'message': 'Member promoted to admin successfully'})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
+
+@clubs_bp.route('/<int:club_id>/members/<int:member_id>/remove', methods=['POST'])
+@jwt_required()
+def remove_member_from_club(club_id, member_id):
+    """Remove a member from a club (admin only)"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    club = Club.query.get(club_id)
+    if not club:
+        response = jsonify({'error': 'Club not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    # Check if current user is an admin
+    if not is_club_admin(club_id, user_id):
+        response = jsonify({'error': 'Only club admins can remove members'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 403
+    
+    # Check if trying to remove self
+    if user_id == member_id:
+        response = jsonify({'error': 'You cannot remove yourself from the club. Use "Leave Club" instead.'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Check if member exists and is a member of the club
+    member = User.query.get(member_id)
+    if not member:
+        response = jsonify({'error': 'Member not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    is_member = db.session.query(club_members).filter_by(
+        user_id=member_id, club_id=club_id
+    ).first() is not None
+    
+    if not is_member:
+        response = jsonify({'error': 'User is not a member of this club'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Check if trying to remove the club creator
+    if club.created_by == member_id:
+        response = jsonify({'error': 'Cannot remove the club creator'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    # Remove from club_admins if they are an admin
+    admin_entry = db.session.query(club_admins).filter_by(
+        user_id=member_id, club_id=club_id
+    ).first()
+    if admin_entry:
+        db.session.execute(
+            club_admins.delete().where(
+                (club_admins.c.user_id == member_id) & 
+                (club_admins.c.club_id == club_id)
+            )
+        )
+    
+    # Remove from club_members
+    db.session.execute(
+        club_members.delete().where(
+            (club_members.c.user_id == member_id) & 
+            (club_members.c.club_id == club_id)
+        )
+    )
+    
+    # Create activity
+    remover = User.query.get(user_id)
+    activity = Activity(
+        club_id=club_id,
+        user_id=user_id,
+        activity_type='remove_member',
+        description=f'{remover.name} removed {member.name} from the club'
+    )
+    db.session.add(activity)
+    
+    db.session.commit()
+    
+    response = jsonify({'message': 'Member removed from club successfully'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response, 200

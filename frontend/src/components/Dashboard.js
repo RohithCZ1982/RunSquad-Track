@@ -112,6 +112,13 @@ function Dashboard() {
           </svg>
           <StylizedText text="RunSquad" size="small" variant="light-bg" />
         </div>
+        <button 
+          onClick={handleLogout} 
+          className="logout-icon-button"
+          title="Logout"
+        >
+          🚪
+        </button>
       </header>
 
       {/* Hero Section */}
@@ -149,7 +156,6 @@ function Dashboard() {
             </div>
           </div>
           <button onClick={() => navigate('/progress')} className="header-button">My Progress</button>
-          <button onClick={handleLogout} className="header-button">Logout</button>
         </div>
       </header>
 
@@ -158,9 +164,9 @@ function Dashboard() {
           <button onClick={() => setShowCreateClub(true)} className="primary-button">
             Create Club
           </button>
-          <button onClick={() => navigate('/bulk-import')} className="secondary-button">
+          {/* <button onClick={() => navigate('/bulk-import')} className="secondary-button">
             Bulk Import Users
-          </button>
+          </button> */}
         </div>
 
         {showCreateClub && (

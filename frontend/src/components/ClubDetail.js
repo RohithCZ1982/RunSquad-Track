@@ -67,6 +67,21 @@ function ClubDetail() {
     }
   };
 
+  const handleRemoveMember = async (memberId, memberName) => {
+    if (!window.confirm(`Are you sure you want to remove ${memberName} from this club?`)) {
+      return;
+    }
+
+    try {
+      await api.post(`/clubs/${id}/members/${memberId}/remove`);
+      alert('Member removed successfully');
+      fetchClub();
+    } catch (err) {
+      console.error('Error removing member:', err);
+      alert(err.response?.data?.error || 'Failed to remove member');
+    }
+  };
+
 
   const handleDeleteClub = async () => {
     setIsDeleting(true);
@@ -134,6 +149,17 @@ function ClubDetail() {
           </svg>
           <StylizedText text="RunSquad" size="small" variant="light-bg" />
         </div>
+        <button 
+          onClick={() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/login');
+          }} 
+          className="logout-icon-button"
+          title="Logout"
+        >
+          🚪
+        </button>
       </header>
 
       {/* Hero Section */}
@@ -357,13 +383,25 @@ function ClubDetail() {
                       </div>
                       <p>{member.email}</p>
                     </div>
-                    {club.is_admin && !member.is_admin && currentUser && currentUser.id !== member.id && (
-                      <button 
-                        className="promote-button"
-                        onClick={() => handlePromoteMember(member.id)}
-                      >
-                        Make Admin
-                      </button>
+                    {club.is_admin && currentUser && currentUser.id !== member.id && (
+                      <div className="member-actions">
+                        {!member.is_admin && (
+                          <button 
+                            className="promote-button"
+                            onClick={() => handlePromoteMember(member.id)}
+                          >
+                            Make Admin
+                          </button>
+                        )}
+                        {club.created_by !== member.id && (
+                          <button 
+                            className="remove-member-button"
+                            onClick={() => handleRemoveMember(member.id, member.name)}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

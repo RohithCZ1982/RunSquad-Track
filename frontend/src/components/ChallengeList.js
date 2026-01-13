@@ -401,7 +401,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                         onClick={() => handleTrackProgress(challenge)}
                         title="Track Progress"
                       >
-                        ✏️
+                        🏃
                       </button>
                       <button 
                         className="view-leaderboard-button icon-button"
@@ -453,7 +453,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                         onClick={() => handleEditChallenge(challenge)}
                         title="Edit Challenge"
                       >
-                        ✏️
+                        📝
                       </button>
                       <button 
                         className="delete-challenge-button icon-button"
