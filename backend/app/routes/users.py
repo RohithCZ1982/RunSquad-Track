@@ -4,8 +4,8 @@ from app.models import Activity, Run, User, Challenge, ChallengeParticipant
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 import re
-import pandas as pd
 import io
+from openpyxl import load_workbook
 
 users_bp = Blueprint('users', __name__)
 
@@ -355,37 +355,37 @@ def bulk_import_users():
         return response, 400
     
     try:
-        # Read Excel file
+        # Read Excel file using openpyxl
         file_content = file.read()
-        df = pd.read_excel(io.BytesIO(file_content))
+        workbook = load_workbook(io.BytesIO(file_content), data_only=True)
+        sheet = workbook.active
+        
+        # Get header row (first row)
+        if sheet.max_row < 2:
+            response = jsonify({'error': 'Excel file is empty or has no data rows'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
+        # Read header row and normalize column names (case-insensitive)
+        header_row = next(sheet.iter_rows(min_row=1, max_row=1, values_only=True))
+        column_indices = {}
+        required_columns = ['name', 'email', 'password']
+        
+        # Map normalized column name to index (0-indexed)
+        for idx, cell_value in enumerate(header_row):
+            if cell_value:
+                col_name = str(cell_value).strip().lower()
+                if col_name in ['name', 'email', 'password', 'address']:
+                    column_indices[col_name] = idx
         
         # Validate required columns
-        required_columns = ['name', 'email', 'password']
-        missing_columns = [col for col in required_columns if col.lower() not in [c.lower() for c in df.columns]]
+        missing_columns = [col for col in required_columns if col not in column_indices]
         
         if missing_columns:
             response = jsonify({
                 'error': f'Missing required columns: {", ".join(missing_columns)}',
                 'required_columns': required_columns,
-                'found_columns': list(df.columns)
-            })
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response, 400
-        
-        # Normalize column names (case-insensitive)
-        column_mapping = {}
-        for col in df.columns:
-            col_lower = col.lower().strip()
-            if col_lower in ['name', 'email', 'password', 'address']:
-                column_mapping[col] = col_lower
-        
-        # Rename columns to lowercase
-        df = df.rename(columns=column_mapping)
-        
-        # Ensure we have the required columns
-        if not all(col in df.columns for col in ['name', 'email', 'password']):
-            response = jsonify({
-                'error': 'Could not find required columns. Please ensure your Excel file has columns: name, email, password (and optionally address)'
+                'found_columns': [col for col in column_indices.keys()]
             })
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response, 400
@@ -395,18 +395,19 @@ def bulk_import_users():
         skipped_users = []
         errors = []
         
-        for index, row in df.iterrows():
+        # Start from row 2 (skip header)
+        for row_idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
             try:
-                # Get values (handle NaN/empty values)
-                name = str(row['name']).strip() if pd.notna(row.get('name')) else None
-                email = str(row['email']).strip() if pd.notna(row.get('email')) else None
-                password = str(row['password']).strip() if pd.notna(row.get('password')) else None
-                address = str(row['address']).strip() if 'address' in row and pd.notna(row.get('address')) else None
+                # Get values (handle None/empty values)
+                name = str(row[column_indices['name']]).strip() if column_indices['name'] < len(row) and row[column_indices['name']] is not None else None
+                email = str(row[column_indices['email']]).strip() if column_indices['email'] < len(row) and row[column_indices['email']] is not None else None
+                password = str(row[column_indices['password']]).strip() if column_indices['password'] < len(row) and row[column_indices['password']] is not None else None
+                address = str(row[column_indices['address']]).strip() if 'address' in column_indices and column_indices['address'] < len(row) and row[column_indices['address']] is not None else None
                 
                 # Validate required fields
                 if not name or not email or not password:
                     errors.append({
-                        'row': index + 2,  # +2 because Excel is 1-indexed and has header
+                        'row': row_idx,
                         'error': 'Missing required field (name, email, or password)'
                     })
                     continue
@@ -414,7 +415,7 @@ def bulk_import_users():
                 # Validate email format
                 if '@' not in email:
                     errors.append({
-                        'row': index + 2,
+                        'row': row_idx,
                         'error': f'Invalid email format: {email}'
                     })
                     continue
@@ -423,7 +424,7 @@ def bulk_import_users():
                 existing_user = User.query.filter_by(email=email).first()
                 if existing_user:
                     skipped_users.append({
-                        'row': index + 2,
+                        'row': row_idx,
                         'email': email,
                         'reason': 'User already exists'
                     })
@@ -445,7 +446,7 @@ def bulk_import_users():
                 
             except Exception as e:
                 errors.append({
-                    'row': index + 2,
+                    'row': row_idx,
                     'error': f'Error processing row: {str(e)}'
                 })
                 continue
@@ -476,10 +477,6 @@ def bulk_import_users():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 200
         
-    except pd.errors.EmptyDataError:
-        response = jsonify({'error': 'Excel file is empty'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 400
     except Exception as e:
         import traceback
         traceback.print_exc()
