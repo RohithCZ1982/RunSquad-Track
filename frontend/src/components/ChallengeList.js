@@ -8,7 +8,6 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [loading, setLoading] = useState(true);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
-  const [showTrackProgress, setShowTrackProgress] = useState(false);
   const [showTrackOptions, setShowTrackOptions] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showGPSTracker, setShowGPSTracker] = useState(false);
@@ -114,7 +113,6 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
       
       alert('Progress tracked successfully!');
       setShowManualForm(false);
-      setShowTrackProgress(false);
       fetchChallenges();
     } catch (err) {
       setTrackError(err.response?.data?.error || 'Failed to track progress');
@@ -149,7 +147,6 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
 
       alert('Progress tracked successfully!');
       setShowGPSTracker(false);
-      setShowTrackProgress(false);
       fetchChallenges();
     } catch (err) {
       console.error('Error saving GPS challenge progress:', err);
@@ -395,7 +392,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
       )}
 
       {showTrackOptions && selectedChallenge && (
-        <div className="modal-overlay" onClick={() => { setShowTrackOptions(false); setShowTrackProgress(false); }}>
+        <div className="modal-overlay" onClick={() => { setShowTrackOptions(false); }}>
           <div className="track-options-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Track Progress - {selectedChallenge.title}</h3>
             <p>Choose how you want to track your progress:</p>
@@ -423,7 +420,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
             </div>
             <button 
               className="close-button"
-              onClick={() => { setShowTrackOptions(false); setShowTrackProgress(false); }}
+              onClick={() => { setShowTrackOptions(false); }}
             >
               Cancel
             </button>
@@ -432,11 +429,11 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
       )}
 
       {showManualForm && selectedChallenge && (
-        <div className="modal-overlay" onClick={() => { setShowManualForm(false); setShowTrackProgress(false); }}>
+        <div className="modal-overlay" onClick={() => { setShowManualForm(false); }}>
           <div className="track-progress-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Track Progress - {selectedChallenge.title}</h2>
-              <button className="close-button" onClick={() => { setShowManualForm(false); setShowTrackProgress(false); }}>×</button>
+              <button className="close-button" onClick={() => { setShowManualForm(false); }}>×</button>
             </div>
             
             {trackError && <div className="error-message">{trackError}</div>}
@@ -497,7 +494,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
               </div>
               
               <div className="modal-actions">
-                <button type="button" onClick={() => { setShowManualForm(false); setShowTrackProgress(false); }}>
+                <button type="button" onClick={() => { setShowManualForm(false); }}>
                   Cancel
                 </button>
                 <button type="submit">
@@ -510,7 +507,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
       )}
 
       {showGPSTracker && selectedChallenge && (
-        <div className="modal-overlay" onClick={() => { setShowGPSTracker(false); setShowTrackProgress(false); }}>
+        <div className="modal-overlay" onClick={() => { setShowGPSTracker(false); }}>
           <div className="gps-tracker-modal" onClick={(e) => e.stopPropagation()}>
             <GPSTracker
               clubId={null}
