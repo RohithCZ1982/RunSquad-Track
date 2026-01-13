@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import './ChallengeList.css';
 
@@ -8,11 +8,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
 
-  useEffect(() => {
-    fetchChallenges();
-  }, [clubId]);
-
-  const fetchChallenges = async () => {
+  const fetchChallenges = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/challenges/club/${clubId}`);
@@ -23,7 +19,11 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clubId]);
+
+  useEffect(() => {
+    fetchChallenges();
+  }, [clubId, fetchChallenges]);
 
   const handleJoinChallenge = async (challengeId) => {
     try {
