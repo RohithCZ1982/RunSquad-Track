@@ -161,6 +161,20 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     setShowGPSTracker(false);
   };
 
+  const handleCompleteChallenge = async (challengeId) => {
+    if (!window.confirm('Are you sure you want to complete this challenge early? This will end the challenge immediately and finalize all rankings.')) {
+      return;
+    }
+
+    try {
+      await api.post(`/challenges/${challengeId}/complete`);
+      alert('Challenge completed successfully!');
+      fetchChallenges();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to complete challenge');
+    }
+  };
+
   const getProgressLabel = (challengeType) => {
     const labels = {
       'weekly_mileage': 'Distance (km)',
@@ -365,6 +379,14 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                       View Final Results
                     </button>
                   )}
+                  {isAdmin && active && (
+                    <button 
+                      className="complete-challenge-button"
+                      onClick={() => handleCompleteChallenge(challenge.id)}
+                    >
+                      Complete Challenge
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -494,6 +516,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
               clubId={null}
               onSave={handleGPSSave}
               onCancel={handleGPSCancel}
+              challengeType={selectedChallenge.challenge_type}
             />
           </div>
         </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './GPSTracker.css';
 
-function GPSTracker({ clubId, onSave, onCancel }) {
+function GPSTracker({ clubId, onSave, onCancel, challengeType }) {
   const [isTracking, setIsTracking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [distance, setDistance] = useState(0); // in km
@@ -11,12 +11,14 @@ function GPSTracker({ clubId, onSave, onCancel }) {
   const [locations, setLocations] = useState([]);
   const [error, setError] = useState('');
   const [notes, setNotes] = useState('');
+  const [autoStopped, setAutoStopped] = useState(false);
 
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
   const pausedTimeRef = useRef(0);
   const intervalRef = useRef(null);
   const lastLocationRef = useRef(null);
+  const autoStoppedRef = useRef(false);
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -105,7 +107,22 @@ function GPSTracker({ clubId, onSave, onCancel }) {
           
           // Only add distance if it's reasonable (filter out GPS jumps)
           if (dist < 0.1) { // Less than 100m between points
-            setDistance(prev => prev + dist);
+            setDistance(prev => {
+              const newDistance = prev + dist;
+              
+              // Auto-stop for 5K challenges when reaching 5km (with 50m tolerance)
+              if (challengeType === 'fastest_5k' && !autoStoppedRef.current && newDistance >= 4.95) {
+                autoStoppedRef.current = true;
+                // Use setTimeout to avoid state update during render
+                setTimeout(() => {
+                  stopTracking();
+                  setAutoStopped(true);
+                  alert('🎉 5K completed! GPS tracking stopped automatically.');
+                }, 100);
+              }
+              
+              return newDistance;
+            });
           }
         }
 
@@ -189,7 +206,20 @@ function GPSTracker({ clubId, onSave, onCancel }) {
           );
           
           if (dist < 0.1) {
-            setDistance(prev => prev + dist);
+            setDistance(prev => {
+              const newDistance = prev + dist;
+              
+              // Auto-stop for 5K challenges when reaching 5km (with 50m tolerance)
+              if (challengeType === 'fastest_5k' && !autoStopped && newDistance >= 4.95) {
+                setTimeout(() => {
+                  stopTracking();
+                  setAutoStopped(true);
+                  alert('🎉 5K completed! GPS tracking stopped automatically.');
+                }, 100);
+              }
+              
+              return newDistance;
+            });
           }
         }
 
@@ -245,6 +275,8 @@ function GPSTracker({ clubId, onSave, onCancel }) {
       setLocations([]);
       setNotes('');
       setError('');
+      setAutoStopped(false);
+      autoStoppedRef.current = false;
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to save run');
     }
@@ -261,6 +293,8 @@ function GPSTracker({ clubId, onSave, onCancel }) {
       setLocations([]);
       setNotes('');
       setError('');
+      setAutoStopped(false);
+      autoStoppedRef.current = false;
       onCancel();
     }
   };

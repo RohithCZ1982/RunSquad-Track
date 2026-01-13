@@ -480,3 +480,55 @@ def track_challenge_progress(challenge_id):
         response = jsonify({'error': f'Failed to track progress: {str(e)}'})
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 500
+
+@challenges_bp.route('/<int:challenge_id>/complete', methods=['POST'])
+@jwt_required()
+def complete_challenge(challenge_id):
+    """Complete a challenge early (admin only)"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    try:
+        challenge = Challenge.query.get(challenge_id)
+        if not challenge:
+            response = jsonify({'error': 'Challenge not found'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 404
+        
+        # Check if user is an admin of the club (using the local function)
+        if not is_club_admin(challenge.club_id, user_id):
+            response = jsonify({'error': 'Only club admins can complete challenges'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 403
+        
+        # Check if challenge is already ended
+        now = datetime.utcnow()
+        if challenge.end_date <= now:
+            response = jsonify({'error': 'Challenge has already ended'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
+        # Update end_date to current time
+        challenge.end_date = now
+        db.session.commit()
+        
+        response = jsonify({
+            'message': 'Challenge completed successfully',
+            'end_date': challenge.end_date.isoformat()
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error completing challenge: {e}")
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to complete challenge: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
