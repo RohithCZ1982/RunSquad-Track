@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.database import db
 from app.models import Run, User, Club, Activity, ScheduledRun, club_members
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+from datetime import datetime, timezone
 
 runs_bp = Blueprint('runs', __name__)
 
@@ -242,7 +242,7 @@ def schedule_run():
         try:
             # Parse the scheduled date
             # Frontend sends ISO format (UTC) like "2024-01-15T19:30:00.000Z"
-            # We need to parse it correctly as UTC
+            # We need to parse it correctly as UTC and convert to naive datetime for SQLAlchemy
             if scheduled_date_str.endswith('Z'):
                 # ISO format with Z (UTC)
                 scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
@@ -257,6 +257,10 @@ def schedule_run():
             else:
                 # Just date format - treat as midnight UTC
                 scheduled_date = datetime.fromisoformat(scheduled_date_str + 'T00:00:00+00:00')
+            
+            # Convert timezone-aware datetime to naive UTC datetime for SQLAlchemy
+            if scheduled_date.tzinfo is not None:
+                scheduled_date = scheduled_date.astimezone(timezone.utc).replace(tzinfo=None)
         except Exception as e:
             print(f"Date parsing error: {e}")
             import traceback
@@ -414,13 +418,19 @@ def update_scheduled_run(scheduled_run_id):
             try:
                 # Parse the scheduled date (same logic as POST endpoint)
                 if scheduled_date_str.endswith('Z'):
-                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
+                    scheduled_date = datetime.fromisoformat(scheduled_date_str.replace('Z', '+00:00'))
                 elif '+' in scheduled_date_str or scheduled_date_str.count('-') >= 3:
-                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str)
+                    scheduled_date = datetime.fromisoformat(scheduled_date_str)
                 elif 'T' in scheduled_date_str:
-                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str + '+00:00')
+                    scheduled_date = datetime.fromisoformat(scheduled_date_str + '+00:00')
                 else:
-                    scheduled_run.scheduled_date = datetime.fromisoformat(scheduled_date_str + 'T00:00:00+00:00')
+                    scheduled_date = datetime.fromisoformat(scheduled_date_str + 'T00:00:00+00:00')
+                
+                # Convert timezone-aware datetime to naive UTC datetime for SQLAlchemy
+                if scheduled_date.tzinfo is not None:
+                    scheduled_date = scheduled_date.astimezone(timezone.utc).replace(tzinfo=None)
+                
+                scheduled_run.scheduled_date = scheduled_date
             except Exception as e:
                 response = jsonify({'error': f'Invalid date format: {str(e)}'})
                 response.headers.add('Access-Control-Allow-Origin', '*')
