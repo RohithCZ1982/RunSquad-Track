@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { convertLocalToIST, convertISTToLocal } from '../utils/dateUtils';
 import './ScheduleRun.css';
 
 function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
@@ -12,23 +13,19 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
   // Set initial date when editing
   useEffect(() => {
     if (initialRun && initialRun.scheduled_date) {
-      // Parse the ISO date string and convert to local datetime-local format
-      const date = new Date(initialRun.scheduled_date);
-      // Get local date components
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+      // Convert IST ISO string to datetime-local format
+      setScheduledDate(convertISTToLocal(initialRun.scheduled_date));
     } else if (!initialRun) {
-      // Set default to current date/time for new runs
+      // Set default to current IST time for new runs
       const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
+      // Get IST time (UTC+5:30)
+      const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+      const istTime = new Date(now.getTime() + istOffset);
+      const year = istTime.getUTCFullYear();
+      const month = String(istTime.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(istTime.getUTCDate()).padStart(2, '0');
+      const hours = String(istTime.getUTCHours()).padStart(2, '0');
+      const minutes = String(istTime.getUTCMinutes()).padStart(2, '0');
       setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`);
     }
   }, [initialRun]);
@@ -38,34 +35,12 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
     setError('');
 
     try {
-      // Convert datetime-local format to ISO format
-      // datetime-local gives us "YYYY-MM-DDTHH:mm" in user's local time
-      let formattedDate = scheduledDate;
-      if (scheduledDate && !scheduledDate.includes('Z') && !scheduledDate.includes('+')) {
-        // datetime-local format: "2024-01-15T14:30"
-        // Parse the components explicitly to create a Date in local timezone
-        const [datePart, timePart] = scheduledDate.split('T');
-        const [year, month, day] = datePart.split('-').map(Number);
-        const [hours, minutes] = (timePart || '00:00').split(':').map(Number);
-        
-        // Create a Date object using local time components
-        // This explicitly creates the date in the user's local timezone
-        const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
-        
-        // Check if the date is valid
-        if (isNaN(localDate.getTime())) {
-          throw new Error('Invalid date format');
-        }
-        
-        // Convert to ISO string (UTC) - this correctly converts local time to UTC
-        formattedDate = localDate.toISOString();
-        
-        console.log('Date conversion:', {
-          input: scheduledDate,
-          localComponents: { year, month, day, hours, minutes },
-          localDate: localDate.toString(),
-          isoString: formattedDate
-        });
+      // Convert datetime-local format to IST ISO format
+      // The datetime-local input is treated as IST time
+      const formattedDate = convertLocalToIST(scheduledDate);
+      
+      if (!formattedDate) {
+        throw new Error('Invalid date format');
       }
 
       if (initialRun) {

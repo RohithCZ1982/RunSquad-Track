@@ -6,6 +6,7 @@ import ActivityFeed from './ActivityFeed';
 import ChallengeList from './ChallengeList';
 import CreateChallenge from './CreateChallenge';
 import StylizedText from './StylizedText';
+import { formatDateIST } from '../utils/dateUtils';
 import './ClubDetail.css';
 
 function ClubDetail() {
@@ -261,7 +262,7 @@ function ClubDetail() {
             <p>Are you sure you want to delete this scheduled run?</p>
             <div className="run-preview">
               <p><strong>Title:</strong> {deleteRunConfirm.title}</p>
-              <p><strong>Date:</strong> {new Date(deleteRunConfirm.scheduled_date).toLocaleString()}</p>
+              <p><strong>Date:</strong> {formatDateIST(deleteRunConfirm.scheduled_date)}</p>
               {deleteRunConfirm.location && <p><strong>Location:</strong> {deleteRunConfirm.location}</p>}
             </div>
             <p className="warning-text">This action cannot be undone.</p>
@@ -380,7 +381,7 @@ function ClubDetail() {
                         )}
                       </div>
                       <div className="run-details">
-                        <p>📅 {new Date(run.scheduled_date).toLocaleString()}</p>
+                        <p>📅 {formatDateIST(run.scheduled_date)}</p>
                         {run.location && <p>📍 {run.location}</p>}
                         <p>Created by: {run.created_by?.name || 'Unknown'}</p>
                         <p>{run.participant_count} participants</p>
