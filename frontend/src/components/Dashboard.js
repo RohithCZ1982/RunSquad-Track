@@ -4,11 +4,13 @@ import api from '../utils/api';
 import CreateClub from './CreateClub';
 import ClubList from './ClubList';
 import StylizedText from './StylizedText';
+import EditProfile from './EditProfile';
 import './Dashboard.css';
 
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [showCreateClub, setShowCreateClub] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [allClubs, setAllClubs] = useState([]); // Store all clubs from API
   const [badges, setBadges] = useState({ gold: 0, silver: 0, bronze: 0 });
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,7 +156,13 @@ function Dashboard() {
       <header className="dashboard-header">
         <div className="header-bottom">
           <div className="user-info">
-            <span className="user-name">{user?.name || 'User'}</span>
+            <span 
+              className="user-name clickable-name" 
+              onClick={() => setShowEditProfile(true)}
+              title="Click to edit profile"
+            >
+              {user?.name || 'User'}
+            </span>
             <div className="user-badges">
               {badges.gold > 0 && (
                 <div className="badge-item gold">
@@ -236,6 +244,18 @@ function Dashboard() {
               setShowCreateClub(false);
               fetchClubs();
             }}
+          />
+        )}
+
+        {showEditProfile && user && (
+          <EditProfile
+            user={user}
+            onClose={() => setShowEditProfile(false)}
+            onSuccess={(updatedUser) => {
+              setUser(updatedUser);
+              setShowEditProfile(false);
+            }}
+            onLogout={handleLogout}
           />
         )}
 

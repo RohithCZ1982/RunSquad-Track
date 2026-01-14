@@ -1,0 +1,128 @@
+.edit-profile-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.edit-profile-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.edit-profile-modal .modal-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 24px;
+}
+
+.edit-profile-modal .close-button {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-profile-modal .close-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.edit-profile-modal .form-group {
+  margin-bottom: 20px;
+}
+
+.edit-profile-modal .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.edit-profile-modal .form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.edit-profile-modal .form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.edit-profile-modal .form-hint {
+  display: block;
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.edit-profile-modal .error-message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #c33;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.edit-profile-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.edit-profile-modal .modal-actions button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.edit-profile-modal .modal-actions button[type="button"] {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.edit-profile-modal .modal-actions button[type="button"]:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.edit-profile-modal .modal-actions button[type="submit"] {
+  background: #3b82f6;
+  color: white;
+}
+
+.edit-profile-modal .modal-actions button[type="submit"]:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.edit-profile-modal .modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

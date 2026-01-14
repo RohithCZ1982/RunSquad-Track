@@ -324,6 +324,68 @@ def delete_activity(activity_id):
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response, 500
 
+@users_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    """Update user profile (name and/or password)"""
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+    
+    user = User.query.get(user_id)
+    if not user:
+        response = jsonify({'error': 'User not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+    
+    data = request.get_json()
+    if not data:
+        response = jsonify({'error': 'No data provided'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 400
+    
+    password_changed = False
+    
+    try:
+        # Update name if provided
+        if 'name' in data and data['name']:
+            user.name = data['name'].strip()
+        
+        # Update password if provided
+        if 'password' in data and data['password']:
+            if len(data['password']) < 6:
+                response = jsonify({'error': 'Password must be at least 6 characters long'})
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response, 400
+            user.set_password(data['password'])
+            password_changed = True
+        
+        db.session.commit()
+        
+        response = jsonify({
+            'message': 'Profile updated successfully',
+            'password_changed': password_changed,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name
+            }
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        response = jsonify({'error': f'Failed to update profile: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
 @users_bp.route('/bulk-import', methods=['POST'])
 @jwt_required()
 def bulk_import_users():
