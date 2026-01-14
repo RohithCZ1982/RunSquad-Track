@@ -303,6 +303,16 @@ def schedule_run():
         
         print(f"Parsed scheduled_date: {scheduled_date}")
         
+        # Validate that scheduled date is not in the past
+        # Get current time as naive datetime in IST (since scheduled_date is stored as naive IST datetime)
+        now_utc = datetime.utcnow()
+        now_ist_naive = (now_utc + IST_OFFSET).replace(tzinfo=None)
+        
+        if scheduled_date < now_ist_naive:
+            response = jsonify({'error': 'Cannot schedule a run in the past. Please select a future date and time.'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 400
+        
         scheduled_run = ScheduledRun(
             club_id=data['club_id'],
             created_by=user_id,
@@ -383,8 +393,19 @@ def get_scheduled_runs(club_id):
     
     scheduled_runs = ScheduledRun.query.filter_by(club_id=club_id).order_by(ScheduledRun.scheduled_date).all()
     
+    # Get current time as naive datetime in IST (since scheduled_date is stored as naive IST datetime)
+    now_utc = datetime.utcnow()
+    now_ist_naive = (now_utc + IST_OFFSET).replace(tzinfo=None)
+    
     runs_data = []
     for run in scheduled_runs:
+        # Filter: If scheduled date has passed, only show to creator
+        # scheduled_date is stored as naive datetime in IST
+        if run.scheduled_date < now_ist_naive:
+            # Past scheduled run - only show to creator
+            if run.created_by != user_id:
+                continue
+        
         creator = User.query.get(run.created_by)
         # Get participant count from the association table
         participant_count = len(list(run.participants)) if run.participants else 0
@@ -456,6 +477,17 @@ def update_scheduled_run(scheduled_run_id):
             try:
                 # Parse the scheduled date as IST
                 scheduled_date = parse_date_as_ist(scheduled_date_str)
+                
+                # Validate that scheduled date is not in the past
+                # Get current time as naive datetime in IST (since scheduled_date is stored as naive IST datetime)
+                now_utc = datetime.utcnow()
+                now_ist_naive = (now_utc + IST_OFFSET).replace(tzinfo=None)
+                
+                if scheduled_date < now_ist_naive:
+                    response = jsonify({'error': 'Cannot schedule a run in the past. Please select a future date and time.'})
+                    response.headers.add('Access-Control-Allow-Origin', '*')
+                    return response, 400
+                
                 scheduled_run.scheduled_date = scheduled_date
             except Exception as e:
                 response = jsonify({'error': f'Invalid date format: {str(e)}'})

@@ -10,6 +10,22 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
   const [location, setLocation] = useState(initialRun?.location || '');
   const [error, setError] = useState('');
 
+  // Get minimum date (current IST time) for datetime-local input
+  const getMinDateTime = () => {
+    const now = new Date();
+    // Get IST time (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istTime = new Date(now.getTime() + istOffset);
+    const year = istTime.getUTCFullYear();
+    const month = String(istTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(istTime.getUTCDate()).padStart(2, '0');
+    const hours = String(istTime.getUTCHours()).padStart(2, '0');
+    const minutes = String(istTime.getUTCMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [minDateTime] = useState(getMinDateTime());
+
   // Set initial date when editing
   useEffect(() => {
     if (initialRun && initialRun.scheduled_date) {
@@ -17,16 +33,7 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
       setScheduledDate(convertISTToLocal(initialRun.scheduled_date));
     } else if (!initialRun) {
       // Set default to current IST time for new runs
-      const now = new Date();
-      // Get IST time (UTC+5:30)
-      const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-      const istTime = new Date(now.getTime() + istOffset);
-      const year = istTime.getUTCFullYear();
-      const month = String(istTime.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(istTime.getUTCDate()).padStart(2, '0');
-      const hours = String(istTime.getUTCHours()).padStart(2, '0');
-      const minutes = String(istTime.getUTCMinutes()).padStart(2, '0');
-      setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+      setScheduledDate(getMinDateTime());
     }
   }, [initialRun]);
 
@@ -94,6 +101,7 @@ function ScheduleRun({ clubId, onClose, onSuccess, initialRun = null }) {
             placeholder="Scheduled Date *"
             value={scheduledDate}
             onChange={(e) => setScheduledDate(e.target.value)}
+            min={minDateTime}
             required
           />
           <input
