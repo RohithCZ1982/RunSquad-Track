@@ -101,15 +101,32 @@
 
 .user-name.clickable-name {
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   padding: 4px 8px;
   border-radius: 4px;
   display: inline-block;
+  position: relative;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+  animation: pulse-underline 2s ease-in-out infinite;
 }
 
 .user-name.clickable-name:hover {
   background: #f3f4f6;
   color: #3b82f6;
+  text-decoration-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+@keyframes pulse-underline {
+  0%, 100% {
+    text-decoration-color: transparent;
+  }
+  50% {
+    text-decoration-color: rgba(59, 130, 246, 0.3);
+  }
 }
 
 .user-badges {
