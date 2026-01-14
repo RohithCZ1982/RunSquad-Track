@@ -71,31 +71,34 @@ export function formatDateIST(istISOString) {
   if (!istISOString) return '';
   
   try {
-    let date;
     if (istISOString.includes('+05:30')) {
-      // Parse IST timezone string
+      // Parse IST timezone string - extract components directly
       const withoutTz = istISOString.replace('+05:30', '').split('.')[0];
       const [datePart, timePart] = withoutTz.split('T');
       const [year, month, day] = datePart.split('-').map(Number);
       const [hours, minutes] = (timePart || '00:00').split(':').map(Number);
-      // Create date as if it were UTC, then format with IST timezone
-      date = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0));
+      
+      // Format directly as IST (no conversion needed since time is already in IST)
+      const dayStr = String(day).padStart(2, '0');
+      const monthStr = String(month).padStart(2, '0');
+      const hourStr = String(hours).padStart(2, '0');
+      const minStr = String(minutes).padStart(2, '0');
+      
+      return `${dayStr}/${monthStr}/${year}, ${hourStr}:${minStr}`;
     } else {
-      date = new Date(istISOString);
+      // For other formats, parse and format with IST timezone
+      const date = new Date(istISOString);
+      const options = { 
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      };
+      return new Intl.DateTimeFormat('en-IN', options).format(date);
     }
-    
-    // Format for display in IST timezone
-    const options = { 
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    };
-    
-    return new Intl.DateTimeFormat('en-IN', options).format(date);
   } catch (e) {
     console.error('Error formatting IST date:', e);
     return istISOString;
