@@ -26,10 +26,11 @@
 }
 
 .runsquad-top-header .waveform-icon {
-  width: 32px;
-  height: 20px;
-  flex-shrink: 0;
   padding-left: 10px;
+  width: auto;
+  height: 1.8em;
+  min-width: 80px;
+  flex-shrink: 0;
 }
 
 .progress-hero {

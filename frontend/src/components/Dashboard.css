@@ -27,6 +27,9 @@
 
 .runsquad-top-header .waveform-icon {
   padding-left: 10px;
+  width: auto;
+  height: 1.8em;
+  min-width: 80px;
 }
 
 .dashboard-hero {
