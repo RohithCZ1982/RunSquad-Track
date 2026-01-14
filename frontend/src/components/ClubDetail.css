@@ -29,6 +29,7 @@
   width: 32px;
   height: 20px;
   flex-shrink: 0;
+  padding-left: 10px;
 }
 
 .club-hero {
@@ -450,18 +451,18 @@
 }
 
 .tab {
-  padding: 12px 24px;
+  padding: 10px 16px;
   border: none;
   background: transparent;
   color: #6b7280;
   border-radius: 8px 8px 0 0;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
 }
@@ -478,7 +479,12 @@
 }
 
 .tab-icon {
-  font-size: 16px;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tab-text {
+  white-space: nowrap;
 }
 
 .tab-content {
@@ -901,14 +907,26 @@
   }
 
   .tabs {
-    overflow-x: auto;
+    overflow-x: visible;
     gap: 4px;
+    flex-wrap: nowrap;
+    justify-content: space-between;
   }
 
   .tab {
-    white-space: nowrap;
-    padding: 10px 16px;
-    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 0;
+    justify-content: center;
+  }
+
+  .tab .tab-text {
+    display: none;
+  }
+
+  .tab .tab-icon {
+    font-size: 20px;
   }
 
   .tab-content {

@@ -298,28 +298,28 @@ function ClubDetail() {
             onClick={() => setActiveTab('scheduled')}
           >
             <span className="tab-icon">📅</span>
-            Scheduled Runs
+            <span className="tab-text">Scheduled Runs</span>
           </button>
           <button
             className={`tab ${activeTab === 'activity' ? 'active' : ''}`}
             onClick={() => setActiveTab('activity')}
           >
             <span className="tab-icon">📝</span>
-            Activity Feed
-          </button>
-          <button
-            className={`tab ${activeTab === 'members' ? 'active' : ''}`}
-            onClick={() => setActiveTab('members')}
-          >
-            <span className="tab-icon">👥</span>
-            Members
+            <span className="tab-text">Activity Feed</span>
           </button>
           <button
             className={`tab ${activeTab === 'challenges' ? 'active' : ''}`}
             onClick={() => setActiveTab('challenges')}
           >
             <span className="tab-icon">🏆</span>
-            Challenges
+            <span className="tab-text">Challenges</span>
+          </button>
+          <button
+            className={`tab ${activeTab === 'members' ? 'active' : ''}`}
+            onClick={() => setActiveTab('members')}
+          >
+            <span className="tab-icon">👥</span>
+            <span className="tab-text">Members</span>
           </button>
         </div>
 

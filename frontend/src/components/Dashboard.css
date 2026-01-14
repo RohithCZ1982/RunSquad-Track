@@ -25,6 +25,10 @@
   max-width: 100%;
 }
 
+.runsquad-top-header .waveform-icon {
+  padding-left: 10px;
+}
+
 .dashboard-hero {
   position: relative;
   height: 200px;
