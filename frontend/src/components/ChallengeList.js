@@ -74,16 +74,6 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
     }
   };
 
-  const handleTrackProgress = (challenge) => {
-    setSelectedChallenge(challenge);
-    setProgressValue('');
-    setProgressNotes('');
-    setProgressImage(null);
-    setImagePreview(null);
-    setTrackError('');
-    setShowTrackOptions(true);
-  };
-
   const handleManualTrack = () => {
     setShowTrackOptions(false);
     setShowManualForm(true);
