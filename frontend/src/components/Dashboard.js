@@ -369,8 +369,6 @@ function Dashboard() {
          (club.location && club.location.toLowerCase().includes(searchQuery.toLowerCase())))
       )
     : [];
-  const displayClubs = searchQuery.trim() ? searchResults : userClubs;
-
   return (
     <div className="dashboard-container">
       <header className="runsquad-top-header">
