@@ -12,7 +12,7 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
   const [showTrackOptions, setShowTrackOptions] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showGPSTracker, setShowGPSTracker] = useState(false);
-  const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [selectedChallenge] = useState(null);
   const [progressValue, setProgressValue] = useState('');
   const [progressNotes, setProgressNotes] = useState('');
   const [progressImage, setProgressImage] = useState(null);
