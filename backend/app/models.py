@@ -47,6 +47,18 @@ class Club(db.Model):
     scheduled_runs = db.relationship('ScheduledRun', backref='club', lazy=True, cascade='all, delete-orphan')
     activities = db.relationship('Activity', backref='club', lazy=True, cascade='all, delete-orphan')
 
+# Association table for run-club tagging
+run_clubs = db.Table('run_clubs',
+    db.Column('run_id', db.Integer, db.ForeignKey('run.id'), primary_key=True),
+    db.Column('club_id', db.Integer, db.ForeignKey('club.id'), primary_key=True)
+)
+
+# Association table for run-challenge tagging
+run_challenges = db.Table('run_challenges',
+    db.Column('run_id', db.Integer, db.ForeignKey('run.id'), primary_key=True),
+    db.Column('challenge_id', db.Integer, db.ForeignKey('challenge.id'), primary_key=True)
+)
+
 class Run(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -55,6 +67,10 @@ class Run(db.Model):
     speed_kmh = db.Column(db.Float, nullable=False)  # Calculated: distance/duration * 60
     date = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    
+    # Relationships for tagging
+    tagged_clubs = db.relationship('Club', secondary=run_clubs, backref='tagged_runs', lazy='dynamic')
+    tagged_challenges = db.relationship('Challenge', secondary=run_challenges, backref='tagged_runs', lazy='dynamic')
     
 class ScheduledRun(db.Model):
     id = db.Column(db.Integer, primary_key=True)

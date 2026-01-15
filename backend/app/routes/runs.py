@@ -98,11 +98,24 @@ def track_run():
         )
         
         db.session.add(run)
-        db.session.commit()
+        db.session.flush()  # Flush to get the run ID
         
-        # Create activity only in specified club (if club_id is provided)
-        club_id = data.get('club_id')
-        if club_id:
+        # Tag run to multiple clubs (if club_ids is provided)
+        club_ids = data.get('club_ids', [])
+        if not isinstance(club_ids, list):
+            # Backward compatibility: if club_id is provided as single value
+            club_id = data.get('club_id')
+            if club_id:
+                club_ids = [club_id]
+        
+        user = User.query.get(user_id)
+        if not user:
+            db.session.rollback()
+            response = jsonify({'error': 'User not found'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 404
+        
+        for club_id in club_ids:
             try:
                 # Verify club exists and user is a member
                 club = Club.query.get(club_id)
@@ -112,35 +125,74 @@ def track_run():
                     ).first() is not None
                     
                     if is_member:
-                        user = User.query.get(user_id)
-                        if user:
-                            activity = Activity(
-                                club_id=club_id,
-                                user_id=user_id,
-                                activity_type='run',
-                                description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
-                            )
-                            db.session.add(activity)
-                            db.session.commit()
+                        # Tag the run to the club
+                        run.tagged_clubs.append(club)
+                        
+                        # Create activity in the club
+                        activity = Activity(
+                            club_id=club_id,
+                            user_id=user_id,
+                            activity_type='run',
+                            description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
+                        )
+                        db.session.add(activity)
             except Exception as e:
-                print(f"Error creating club activity: {e}")
-                # Don't fail the run tracking if activity creation fails
+                print(f"Error tagging run to club {club_id}: {e}")
+                # Continue with other clubs even if one fails
         
-        # Update challenge progress for all active challenges
+        # Tag run to multiple challenges (if challenge_ids is provided)
+        challenge_ids = data.get('challenge_ids', [])
+        if not isinstance(challenge_ids, list):
+            challenge_ids = []
+        
+        for challenge_id in challenge_ids:
+            try:
+                from app.models import Challenge, ChallengeParticipant
+                challenge = Challenge.query.get(challenge_id)
+                if challenge:
+                    # Verify user is participating in the challenge
+                    participant = ChallengeParticipant.query.filter_by(
+                        challenge_id=challenge_id,
+                        user_id=user_id
+                    ).first()
+                    
+                    if participant:
+                        # Tag the run to the challenge
+                        run.tagged_challenges.append(challenge)
+            except Exception as e:
+                print(f"Error tagging run to challenge {challenge_id}: {e}")
+                # Continue with other challenges even if one fails
+        
+        db.session.commit()
+        
+        # Update challenge progress for all tagged challenges and active challenges
         try:
             from app.models import Challenge, ChallengeParticipant
             
             now = datetime.utcnow()
+            # Get all challenges the user is participating in (tagged or active)
+            all_challenge_ids = set(challenge_ids)
             participants = db.session.query(ChallengeParticipant).join(Challenge).filter(
                 ChallengeParticipant.user_id == user_id,
                 Challenge.start_date <= now,
                 Challenge.end_date >= now
             ).all()
             
-            # Update progress for each challenge
             for participant in participants:
-                challenge = Challenge.query.get(participant.challenge_id)
+                all_challenge_ids.add(participant.challenge_id)
+            
+            # Update progress for each challenge
+            for challenge_id_val in all_challenge_ids:
+                challenge = Challenge.query.get(challenge_id_val)
                 if not challenge:
+                    continue
+                
+                participant = ChallengeParticipant.query.filter_by(
+                    challenge_id=challenge_id_val,
+                    user_id=user_id
+                ).first()
+                
+                if not participant:
                     continue
                 
                 # Get runs within challenge date range

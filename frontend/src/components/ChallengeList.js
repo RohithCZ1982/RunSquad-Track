@@ -398,13 +398,6 @@ function ChallengeList({ clubId, isAdmin, onJoinChallenge }) {
                     <>
                       <div className="primary-actions">
                         <button 
-                          className="track-progress-button icon-button"
-                          onClick={() => handleTrackProgress(challenge)}
-                          title="Track Progress"
-                        >
-                          🏃
-                        </button>
-                        <button 
                           className="view-leaderboard-button icon-button"
                           onClick={() => handleViewLeaderboard(challenge.id)}
                           title="View Leaderboard"

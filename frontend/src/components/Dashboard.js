@@ -5,55 +5,79 @@ import CreateClub from './CreateClub';
 import ClubList from './ClubList';
 import StylizedText from './StylizedText';
 import EditProfile from './EditProfile';
+import GPSTracker from './GPSTracker';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import './Dashboard.css';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [showCreateClub, setShowCreateClub] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [allClubs, setAllClubs] = useState([]); // Store all clubs from API
+  const [allClubs, setAllClubs] = useState([]);
   const [badges, setBadges] = useState({ gold: 0, silver: 0, bronze: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('my-clubs');
   const navigate = useNavigate();
+
+  // Tracking tab state
+  const [runs, setRuns] = useState([]);
+  const [statistics, setStatistics] = useState(null);
+  const [showTrackOptions, setShowTrackOptions] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [showGPSTracker, setShowGPSTracker] = useState(false);
+  const [distance, setDistance] = useState('');
+  const [duration, setDuration] = useState('');
+  const [notes, setNotes] = useState('');
+  const [date, setDate] = useState('');
+  const [editingRun, setEditingRun] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [chartType, setChartType] = useState('distance');
+  const [selectedClubs, setSelectedClubs] = useState([]);
+  const [selectedChallenges, setSelectedChallenges] = useState([]);
+  const [userChallenges, setUserChallenges] = useState([]);
 
   const fetchClubs = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('No token available for clubs fetch');
         navigate('/login', { replace: true });
         return;
       }
       
-      console.log('Fetching clubs...');
       const response = await api.get('/clubs');
-      console.log('Clubs response:', response);
-      console.log('Clubs data:', response?.data);
-      
       if (response && response.data) {
-        console.log(`Setting ${response.data.length} clubs`);
         setAllClubs(response.data);
-      } else {
-        console.warn('No clubs data in response');
       }
     } catch (err) {
       console.error('Error fetching clubs:', err);
-      console.error('Error details:', {
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        message: err.message
-      });
-      
-      // If token is invalid, redirect to login
       if (err.response?.status === 401 || err.response?.status === 422) {
-        console.log('Token invalid, clearing and redirecting to login...');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         navigate('/login', { replace: true });
-      } else if (err.code === 'ERR_NETWORK' || !err.response) {
-        // Network error - might be CORS or server down
-        console.error('Network error - check if backend is running');
       }
     }
   }, [navigate]);
@@ -64,16 +88,43 @@ function Dashboard() {
       setBadges(response.data);
     } catch (err) {
       console.error('Error fetching badges:', err);
-      // Don't show error to user, just set to 0
       setBadges({ gold: 0, silver: 0, bronze: 0 });
     }
   }, []);
 
+  const fetchProgress = useCallback(async () => {
+    try {
+      const response = await api.get('/runs/my-progress');
+      setRuns(response.data.runs);
+      setStatistics(response.data.statistics);
+    } catch (err) {
+      console.error('Error fetching progress:', err);
+    }
+  }, []);
+
+  const fetchUserChallenges = useCallback(async () => {
+    try {
+      const userClubs = allClubs.filter(club => club.is_member || club.is_creator);
+      const challengesPromises = userClubs.map(club => 
+        api.get(`/challenges/club/${club.id}`).catch(() => ({ data: [] }))
+      );
+      const challengesResponses = await Promise.all(challengesPromises);
+      const allChallenges = challengesResponses.flatMap(res => res.data || []);
+      const activeChallenges = allChallenges.filter(ch => {
+        const now = new Date();
+        const start = new Date(ch.start_date);
+        const end = new Date(ch.end_date);
+        return ch.is_participating && now >= start && now <= end;
+      });
+      setUserChallenges(activeChallenges);
+    } catch (err) {
+      console.error('Error fetching challenges:', err);
+    }
+  }, [allClubs]);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
-    
     if (!token) {
-      console.log('No token found in Dashboard, redirecting to login...');
       navigate('/login', { replace: true });
       return;
     }
@@ -92,16 +143,223 @@ function Dashboard() {
     fetchBadges();
   }, [navigate, fetchClubs, fetchBadges]);
 
+  useEffect(() => {
+    if (activeTab === 'tracking') {
+      fetchProgress();
+      fetchUserChallenges();
+    }
+  }, [activeTab, fetchProgress, fetchUserChallenges]);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
   };
 
-  // Filter clubs: by default show only user's clubs (created or joined)
+  const handleTrackRun = async (e) => {
+    e.preventDefault();
+
+    try {
+      let formattedDate = date;
+      if (date && !date.includes('Z') && !date.includes('+')) {
+        const [datePart, timePart] = date.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hours, minutes] = (timePart || '00:00').split(':').map(Number);
+        const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+        if (isNaN(localDate.getTime())) {
+          throw new Error('Invalid date format');
+        }
+        formattedDate = localDate.toISOString();
+      }
+
+      const runData = {
+        distance_km: parseFloat(distance),
+        duration_minutes: parseFloat(duration),
+        notes: notes || undefined,
+        date: formattedDate || undefined,
+        club_ids: selectedClubs,
+        challenge_ids: selectedChallenges
+      };
+
+      if (editingRun) {
+        await api.put(`/runs/${editingRun.id}`, runData);
+      } else {
+        await api.post('/runs/track', runData);
+      }
+      
+      setDistance('');
+      setDuration('');
+      setNotes('');
+      setDate('');
+      setSelectedClubs([]);
+      setSelectedChallenges([]);
+      setShowManualForm(false);
+      setEditingRun(null);
+      fetchProgress();
+    } catch (err) {
+      alert(err.response?.data?.error || `Failed to ${editingRun ? 'update' : 'track'} run`);
+    }
+  };
+
+  const handleGPSSave = async (runData) => {
+    try {
+      await api.post('/runs/track', {
+        ...runData,
+        club_ids: selectedClubs,
+        challenge_ids: selectedChallenges
+      });
+      setShowGPSTracker(false);
+      setSelectedClubs([]);
+      setSelectedChallenges([]);
+      fetchProgress();
+    } catch (err) {
+      console.error('Error saving GPS run:', err);
+      throw err;
+    }
+  };
+
+  const handleGPSCancel = () => {
+    setShowGPSTracker(false);
+    setSelectedClubs([]);
+    setSelectedChallenges([]);
+  };
+
+  const handleEditRun = (run) => {
+    setEditingRun(run);
+    setDistance(run.distance_km.toString());
+    setDuration(run.duration_minutes.toString());
+    setNotes(run.notes || '');
+    
+    const runDate = new Date(run.date);
+    const year = runDate.getFullYear();
+    const month = String(runDate.getMonth() + 1).padStart(2, '0');
+    const day = String(runDate.getDate()).padStart(2, '0');
+    const hours = String(runDate.getHours()).padStart(2, '0');
+    const minutes = String(runDate.getMinutes()).padStart(2, '0');
+    setDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    
+    setShowManualForm(true);
+  };
+
+  const handleDeleteRun = async () => {
+    if (!showDeleteConfirm) return;
+
+    try {
+      await api.delete(`/runs/${showDeleteConfirm.id}`);
+      setShowDeleteConfirm(null);
+      fetchProgress();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete run');
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const handleCancelForm = () => {
+    setShowManualForm(false);
+    setEditingRun(null);
+    setDistance('');
+    setDuration('');
+    setNotes('');
+    setDate('');
+    setSelectedClubs([]);
+    setSelectedChallenges([]);
+  };
+
+  const getRecentRuns = () => {
+    const sortedRuns = [...runs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    return sortedRuns.length > 10 ? sortedRuns.slice(-10) : sortedRuns;
+  };
+
+  const getDistanceChartData = () => {
+    const recentRuns = getRecentRuns();
+    return {
+      labels: recentRuns.map(run => {
+        const date = new Date(run.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }),
+      datasets: [{
+        label: 'Distance (km)',
+        data: recentRuns.map(run => run.distance_km),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: '#3b82f6',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+      }],
+    };
+  };
+
+  const getSpeedChartData = () => {
+    const recentRuns = getRecentRuns();
+    return {
+      labels: recentRuns.map(run => {
+        const date = new Date(run.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }),
+      datasets: [{
+        label: 'Speed (km/h)',
+        data: recentRuns.map(run => run.speed_kmh),
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: '#10b981',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+      }],
+    };
+  };
+
+  const getChartOptions = (title, color) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          color: '#6b7280',
+          font: { size: 12, weight: '600' },
+          padding: 15,
+        },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        titleFont: { size: 14, weight: '600' },
+        bodyFont: { size: 13 },
+        cornerRadius: 8,
+        displayColors: true,
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: '#6b7280',
+          font: { size: 11 },
+        },
+      },
+      y: {
+        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+        ticks: {
+          color: '#6b7280',
+          font: { size: 11 },
+        },
+        beginAtZero: true,
+      },
+    },
+  });
+
   const userClubs = allClubs.filter(club => club.is_member || club.is_creator);
-  
-  // Search results: clubs that user can join (not a member and not creator)
   const searchResults = searchQuery.trim() 
     ? allClubs.filter(club => 
         !club.is_member && 
@@ -111,13 +369,10 @@ function Dashboard() {
          (club.location && club.location.toLowerCase().includes(searchQuery.toLowerCase())))
       )
     : [];
-
-  // Display clubs: user's clubs by default, or search results when searching
   const displayClubs = searchQuery.trim() ? searchResults : userClubs;
 
   return (
     <div className="dashboard-container">
-      {/* RunSquad Header with Blue Icon - Top of Page */}
       <header className="runsquad-top-header">
         <div className="runsquad-header-content">
           <svg className="waveform-icon" viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
@@ -132,10 +387,7 @@ function Dashboard() {
           </svg>
           <StylizedText text="RunSquad" size="small" variant="light-bg" />
         </div>
-        <button 
-          onClick={handleLogout} 
-          className="logout-btn"
-        >
+        <button onClick={handleLogout} className="logout-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
@@ -144,7 +396,6 @@ function Dashboard() {
         </button>
       </header>
 
-      {/* Hero Section */}
       <div className="dashboard-hero">
         <div className="dashboard-hero-content">
           <h2>Your Running Clubs</h2>
@@ -152,7 +403,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Name and Buttons Section */}
       <header className="dashboard-header">
         <div className="header-bottom">
           <div className="user-info">
@@ -184,58 +434,364 @@ function Dashboard() {
               )}
             </div>
           </div>
-          <button onClick={() => navigate('/progress')} className="header-button">My Progress</button>
         </div>
       </header>
 
-      <main className="dashboard-main">
-        <div className="dashboard-actions">
-          <button onClick={() => setShowCreateClub(true)} className="primary-button">
-            Create Club
-          </button>
-          {/* Bulk Import Users button hidden */}
-          {/* <button onClick={() => navigate('/bulk-import')} className="secondary-button">
-            Bulk Import Users
-          </button> */}
-        </div>
+      <div className="dashboard-tabs">
+        <button
+          className={`dashboard-tab ${activeTab === 'my-clubs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('my-clubs')}
+        >
+          <span className="tab-icon">🏃</span>
+          <span className="tab-text">My Clubs</span>
+        </button>
+        <button
+          className={`dashboard-tab ${activeTab === 'all-clubs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all-clubs')}
+        >
+          <span className="tab-icon">👥</span>
+          <span className="tab-text">All Clubs</span>
+        </button>
+        <button
+          className={`dashboard-tab ${activeTab === 'tracking' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tracking')}
+        >
+          <span className="tab-icon">📊</span>
+          <span className="tab-text">Tracking</span>
+        </button>
+      </div>
 
-        {/* Search Section */}
-        <div className="club-search-section">
-          <div className="search-container">
-            <div className="search-icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="search-icon">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-              </svg>
-            </div>
-            <input
-              type="text"
-              className="club-search-input"
-              placeholder="Search for clubs to join..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button 
-                className="clear-search-button"
-                onClick={() => setSearchQuery('')}
-                title="Clear search"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+      <main className="dashboard-main">
+        {activeTab === 'my-clubs' && (
+          <>
+            <div className="dashboard-actions">
+              <button onClick={() => setShowCreateClub(true)} className="primary-button">
+                Create Club
               </button>
+            </div>
+            <ClubList clubs={userClubs} onJoin={fetchClubs} searchMode={false} />
+          </>
+        )}
+
+        {activeTab === 'all-clubs' && (
+          <>
+            <div className="club-search-section">
+              <div className="search-container">
+                <div className="search-icon-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="search-icon">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  className="club-search-input"
+                  placeholder="Search for clubs to join..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button 
+                    className="clear-search-button"
+                    onClick={() => setSearchQuery('')}
+                    title="Clear search"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {searchQuery.trim() && (
+                <div className="search-results-header">
+                  <p className="search-results-count">
+                    {searchResults.length} {searchResults.length === 1 ? 'club found' : 'clubs found'}
+                  </p>
+                </div>
+              )}
+            </div>
+            <ClubList clubs={searchResults} onJoin={fetchClubs} searchMode={true} />
+          </>
+        )}
+
+        {activeTab === 'tracking' && (
+          <div className="tracking-tab">
+            <div className="tracking-header">
+              <h2>Tracking</h2>
+              <button 
+                onClick={() => setShowTrackOptions(true)} 
+                className="track-run-button"
+              >
+                <span>+</span> Track Run
+              </button>
+            </div>
+
+            {showTrackOptions && (
+              <div className="modal-overlay" onClick={() => setShowTrackOptions(false)}>
+                <div className="track-options-modal" onClick={(e) => e.stopPropagation()}>
+                  <h3>Track Your Run</h3>
+                  <p>Choose how you want to track your run:</p>
+                  <div className="track-options">
+                    <button 
+                      className="track-option-button manual"
+                      onClick={() => {
+                        setShowTrackOptions(false);
+                        setShowManualForm(true);
+                      }}
+                    >
+                      <span className="option-icon">✏️</span>
+                      <div>
+                        <h4>Track Manually</h4>
+                        <p>Enter distance, time, notes, and date</p>
+                      </div>
+                    </button>
+                    <button 
+                      className="track-option-button gps"
+                      onClick={() => {
+                        setShowTrackOptions(false);
+                        setShowGPSTracker(true);
+                      }}
+                    >
+                      <span className="option-icon">📍</span>
+                      <div>
+                        <h4>Track Run (GPS)</h4>
+                        <p>Use GPS to track your run in real-time</p>
+                      </div>
+                    </button>
+                  </div>
+                  <button 
+                    className="close-button"
+                    onClick={() => setShowTrackOptions(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showGPSTracker && (
+              <div className="modal-overlay" onClick={handleGPSCancel}>
+                <div className="gps-tracker-modal" onClick={(e) => e.stopPropagation()}>
+                  <GPSTracker
+                    clubId={null}
+                    onSave={handleGPSSave}
+                    onCancel={handleGPSCancel}
+                  />
+                </div>
+              </div>
+            )}
+
+            {showManualForm && (
+              <div className="modal-overlay" onClick={handleCancelForm}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <h2>{editingRun ? 'Edit Run' : 'Track Run'}</h2>
+                  <form onSubmit={handleTrackRun}>
+                    <div className="form-group">
+                      <label>Distance (km) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Enter distance in kilometers"
+                        value={distance}
+                        onChange={(e) => setDistance(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Duration (minutes) *</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        placeholder="Enter duration in minutes"
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date</label>
+                      <input
+                        type="datetime-local"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                      />
+                      <small className="form-hint">Leave empty to use current date/time</small>
+                    </div>
+                    <div className="form-group">
+                      <label>Tag to Clubs (Optional)</label>
+                      <div className="checkbox-group">
+                        {userClubs.map(club => (
+                          <label key={club.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={selectedClubs.includes(club.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedClubs([...selectedClubs, club.id]);
+                                } else {
+                                  setSelectedClubs(selectedClubs.filter(id => id !== club.id));
+                                }
+                              }}
+                            />
+                            {club.name}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Tag to Challenges (Optional)</label>
+                      <div className="checkbox-group">
+                        {userChallenges.map(challenge => (
+                          <label key={challenge.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={selectedChallenges.includes(challenge.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedChallenges([...selectedChallenges, challenge.id]);
+                                } else {
+                                  setSelectedChallenges(selectedChallenges.filter(id => id !== challenge.id));
+                                }
+                              }}
+                            />
+                            {challenge.title}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Notes (Optional)</label>
+                      <textarea
+                        placeholder="Add any notes about your run..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        rows="4"
+                      />
+                    </div>
+                    <div className="modal-actions">
+                      <button type="button" onClick={handleCancelForm}>Cancel</button>
+                      <button type="submit">{editingRun ? 'Update' : 'Save'}</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {statistics && (
+              <div className="statistics">
+                <div className="stat-card">
+                  <h3>Total Runs</h3>
+                  <p>{statistics.total_runs}</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Total Distance</h3>
+                  <p>{statistics.total_distance_km} km</p>
+                </div>
+                <div className="stat-card">
+                  <h3>Average Speed</h3>
+                  <p>{statistics.average_speed_kmh} km/h</p>
+                </div>
+              </div>
+            )}
+
+            {runs.length > 0 && (
+              <div className="performance-graph-section">
+                <div className="graph-header">
+                  <h2>Performance Trends</h2>
+                  <div className="chart-type-selector">
+                    <button
+                      className={chartType === 'distance' ? 'active' : ''}
+                      onClick={() => setChartType('distance')}
+                    >
+                      Distance
+                    </button>
+                    <button
+                      className={chartType === 'speed' ? 'active' : ''}
+                      onClick={() => setChartType('speed')}
+                    >
+                      Speed
+                    </button>
+                  </div>
+                </div>
+                <div className="chart-container">
+                  {chartType === 'distance' && (
+                    <Line
+                      data={getDistanceChartData()}
+                      options={getChartOptions('Distance (km)', '#3b82f6')}
+                    />
+                  )}
+                  {chartType === 'speed' && (
+                    <Line
+                      data={getSpeedChartData()}
+                      options={getChartOptions('Speed (km/h)', '#10b981')}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="runs-list">
+              <h2>Running History</h2>
+              {runs.length === 0 ? (
+                <p className="no-runs">No runs tracked yet. Start tracking your runs!</p>
+              ) : (
+                runs.map((run) => (
+                  <div key={run.id} className="run-card">
+                    <div className="run-header">
+                      <h3>{new Date(run.date).toLocaleDateString()}</h3>
+                      <span className="speed-badge">{run.speed_kmh.toFixed(1)} km/h</span>
+                    </div>
+                    <div className="run-details">
+                      <p>Distance: {run.distance_km} km</p>
+                      <p>Duration: {run.duration_minutes} minutes</p>
+                      {run.notes && <p>Notes: {run.notes}</p>}
+                    </div>
+                    <div className="run-actions">
+                      <button 
+                        className="edit-button"
+                        onClick={() => handleEditRun(run)}
+                        title="Edit run"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="delete-button"
+                        onClick={() => setShowDeleteConfirm(run)}
+                        title="Delete run"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {showDeleteConfirm && (
+              <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+                <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                  <h2>Delete Run</h2>
+                  <p>Are you sure you want to delete this run?</p>
+                  <div className="run-preview">
+                    <p><strong>Date:</strong> {new Date(showDeleteConfirm.date).toLocaleString()}</p>
+                    <p><strong>Distance:</strong> {showDeleteConfirm.distance_km} km</p>
+                    <p><strong>Duration:</strong> {showDeleteConfirm.duration_minutes} minutes</p>
+                  </div>
+                  <p className="warning-text">This action cannot be undone.</p>
+                  <div className="modal-actions">
+                    <button type="button" onClick={() => setShowDeleteConfirm(null)}>Cancel</button>
+                    <button type="button" onClick={handleDeleteRun} className="delete-confirm-button">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          {searchQuery.trim() && (
-            <div className="search-results-header">
-              <p className="search-results-count">
-                {searchResults.length} {searchResults.length === 1 ? 'club found' : 'clubs found'}
-              </p>
-            </div>
-          )}
-        </div>
+        )}
 
         {showCreateClub && (
           <CreateClub
@@ -258,8 +814,6 @@ function Dashboard() {
             onLogout={handleLogout}
           />
         )}
-
-        <ClubList clubs={displayClubs} onJoin={fetchClubs} searchMode={!!searchQuery.trim()} />
       </main>
     </div>
   );

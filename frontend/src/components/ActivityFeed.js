@@ -216,12 +216,6 @@ function ActivityFeed({ clubId }) {
     <div className="activity-feed">
       <div className="activity-feed-header">
         <h2>Activity Feed</h2>
-        <button 
-          onClick={() => setShowTrackOptions(true)} 
-          className="track-run-button"
-        >
-          <span>+</span> Track Run
-        </button>
       </div>
 
       {showTrackOptions && (

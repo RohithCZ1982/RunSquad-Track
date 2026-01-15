@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
-import MyProgress from './components/MyProgress';
 import ClubDetail from './components/ClubDetail';
 import BulkImportUsers from './components/BulkImportUsers';
 import './App.css';
@@ -74,14 +73,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/progress"
-            element={
-              <ProtectedRoute>
-                <MyProgress />
               </ProtectedRoute>
             }
           />

@@ -344,9 +344,6 @@ function MyProgress() {
             <span className="user-name">My Progress</span>
           </div>
           <button onClick={() => navigate('/dashboard')} className="header-button">← Back to Dashboard</button>
-          <button onClick={() => setShowTrackOptions(true)} className="track-run-button">
-            <span>+</span> Track Run
-          </button>
         </div>
       </header>
 
