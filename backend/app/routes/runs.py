@@ -57,6 +57,55 @@ def format_date_as_ist(dt):
     # Convert to ISO format with timezone
     return ist_dt.isoformat()
 
+def update_challenge_progress(user_id, challenge_ids):
+    """Update progress for specific challenges for a user."""
+    if not challenge_ids:
+        return
+    try:
+        from app.models import Challenge, ChallengeParticipant
+        for challenge_id in challenge_ids:
+            challenge = Challenge.query.get(challenge_id)
+            if not challenge:
+                continue
+
+            participant = ChallengeParticipant.query.filter_by(
+                challenge_id=challenge_id,
+                user_id=user_id
+            ).first()
+
+            if not participant:
+                continue
+
+            challenge_runs = Run.query.filter(
+                Run.user_id == user_id,
+                Run.date >= challenge.start_date,
+                Run.date <= challenge.end_date
+            ).all()
+
+            progress = 0.0
+            if challenge.challenge_type == 'weekly_mileage':
+                progress = sum(run.distance_km for run in challenge_runs)
+            elif challenge.challenge_type == 'fastest_5k':
+                fastest_time = None
+                for run in challenge_runs:
+                    if 4.5 <= run.distance_km <= 5.5:
+                        time_minutes = run.duration_minutes
+                        if fastest_time is None or time_minutes < fastest_time:
+                            fastest_time = time_minutes
+                progress = fastest_time if fastest_time else 0
+            elif challenge.challenge_type == 'total_distance':
+                progress = sum(run.distance_km for run in challenge_runs)
+            elif challenge.challenge_type == 'total_time':
+                progress = sum(run.duration_minutes for run in challenge_runs)
+
+            participant.progress_value = progress
+        db.session.commit()
+    except Exception as e:
+        print(f"Error updating challenge progress: {e}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+
 @runs_bp.route('/track', methods=['POST'])
 @jwt_required()
 def track_run():
@@ -98,135 +147,7 @@ def track_run():
         )
         
         db.session.add(run)
-        db.session.flush()  # Flush to get the run ID
-        
-        # Tag run to multiple clubs (if club_ids is provided)
-        club_ids = data.get('club_ids', [])
-        if not isinstance(club_ids, list):
-            # Backward compatibility: if club_id is provided as single value
-            club_id = data.get('club_id')
-            if club_id:
-                club_ids = [club_id]
-        
-        user = User.query.get(user_id)
-        if not user:
-            db.session.rollback()
-            response = jsonify({'error': 'User not found'})
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response, 404
-        
-        for club_id in club_ids:
-            try:
-                # Verify club exists and user is a member
-                club = Club.query.get(club_id)
-                if club:
-                    is_member = db.session.query(club_members).filter_by(
-                        user_id=user_id, club_id=club_id
-                    ).first() is not None
-                    
-                    if is_member:
-                        # Tag the run to the club
-                        run.tagged_clubs.append(club)
-                        
-                        # Create activity in the club
-                        activity = Activity(
-                            club_id=club_id,
-                            user_id=user_id,
-                            activity_type='run',
-                            description=f'{user.name} ran {distance:.2f} km at {speed_kmh:.2f} km/h'
-                        )
-                        db.session.add(activity)
-            except Exception as e:
-                print(f"Error tagging run to club {club_id}: {e}")
-                # Continue with other clubs even if one fails
-        
-        # Tag run to multiple challenges (if challenge_ids is provided)
-        challenge_ids = data.get('challenge_ids', [])
-        if not isinstance(challenge_ids, list):
-            challenge_ids = []
-        
-        for challenge_id in challenge_ids:
-            try:
-                from app.models import Challenge, ChallengeParticipant
-                challenge = Challenge.query.get(challenge_id)
-                if challenge:
-                    # Verify user is participating in the challenge
-                    participant = ChallengeParticipant.query.filter_by(
-                        challenge_id=challenge_id,
-                        user_id=user_id
-                    ).first()
-                    
-                    if participant:
-                        # Tag the run to the challenge
-                        run.tagged_challenges.append(challenge)
-            except Exception as e:
-                print(f"Error tagging run to challenge {challenge_id}: {e}")
-                # Continue with other challenges even if one fails
-        
         db.session.commit()
-        
-        # Update challenge progress for all tagged challenges and active challenges
-        try:
-            from app.models import Challenge, ChallengeParticipant
-            
-            now = datetime.utcnow()
-            # Get all challenges the user is participating in (tagged or active)
-            all_challenge_ids = set(challenge_ids)
-            participants = db.session.query(ChallengeParticipant).join(Challenge).filter(
-                ChallengeParticipant.user_id == user_id,
-                Challenge.start_date <= now,
-                Challenge.end_date >= now
-            ).all()
-            
-            for participant in participants:
-                all_challenge_ids.add(participant.challenge_id)
-            
-            # Update progress for each challenge
-            for challenge_id_val in all_challenge_ids:
-                challenge = Challenge.query.get(challenge_id_val)
-                if not challenge:
-                    continue
-                
-                participant = ChallengeParticipant.query.filter_by(
-                    challenge_id=challenge_id_val,
-                    user_id=user_id
-                ).first()
-                
-                if not participant:
-                    continue
-                
-                # Get runs within challenge date range
-                challenge_runs = Run.query.filter(
-                    Run.user_id == user_id,
-                    Run.date >= challenge.start_date,
-                    Run.date <= challenge.end_date
-                ).all()
-                
-                progress = 0.0
-                
-                if challenge.challenge_type == 'weekly_mileage':
-                    progress = sum(run.distance_km for run in challenge_runs)
-                elif challenge.challenge_type == 'fastest_5k':
-                    fastest_time = None
-                    for run in challenge_runs:
-                        if 4.5 <= run.distance_km <= 5.5:
-                            time_minutes = run.duration_minutes
-                            if fastest_time is None or time_minutes < fastest_time:
-                                fastest_time = time_minutes
-                    progress = fastest_time if fastest_time else 0
-                elif challenge.challenge_type == 'total_distance':
-                    progress = sum(run.distance_km for run in challenge_runs)
-                elif challenge.challenge_type == 'total_time':
-                    progress = sum(run.duration_minutes for run in challenge_runs)
-                
-                participant.progress_value = progress
-            
-            db.session.commit()
-        except Exception as e:
-            print(f"Error updating challenge progress: {e}")
-            import traceback
-            traceback.print_exc()
-            # Don't fail the run tracking if challenge update fails
         
         response = jsonify({
             'id': run.id,
@@ -265,13 +186,32 @@ def get_my_progress():
     total_duration = 0
     
     for run in runs:
+        tagged_scheduled_runs = [
+            {
+                'id': scheduled_run.id,
+                'title': scheduled_run.title,
+                'scheduled_date': format_date_as_ist(scheduled_run.scheduled_date),
+                'club_id': scheduled_run.club_id,
+                'club_name': scheduled_run.club.name if scheduled_run.club else None
+            }
+            for scheduled_run in run.tagged_scheduled_runs.all()
+        ]
+        tagged_challenges = [
+            {
+                'id': challenge.id,
+                'title': challenge.title
+            }
+            for challenge in run.tagged_challenges.all()
+        ]
         runs_data.append({
             'id': run.id,
             'distance_km': run.distance_km,
             'duration_minutes': run.duration_minutes,
             'speed_kmh': run.speed_kmh,
             'date': run.date.isoformat(),
-            'notes': run.notes
+            'notes': run.notes,
+            'tagged_scheduled_runs': tagged_scheduled_runs,
+            'tagged_challenges': tagged_challenges
         })
         total_distance += run.distance_km
         total_duration += run.duration_minutes
@@ -289,6 +229,161 @@ def get_my_progress():
     })
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
+
+@runs_bp.route('/schedule/my', methods=['GET'])
+@jwt_required()
+def get_my_scheduled_runs():
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+
+    try:
+        scheduled_runs = db.session.query(ScheduledRun, Club).join(
+            Club, ScheduledRun.club_id == Club.id
+        ).join(
+            club_members, club_members.c.club_id == Club.id
+        ).filter(
+            club_members.c.user_id == user_id
+        ).order_by(ScheduledRun.scheduled_date.desc()).all()
+
+        runs_data = []
+        for scheduled_run, club in scheduled_runs:
+            runs_data.append({
+                'id': scheduled_run.id,
+                'title': scheduled_run.title,
+                'description': scheduled_run.description,
+                'scheduled_date': format_date_as_ist(scheduled_run.scheduled_date),
+                'location': scheduled_run.location,
+                'club_id': club.id,
+                'club_name': club.name
+            })
+
+        response = jsonify(runs_data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+    except Exception as e:
+        response = jsonify({'error': f'Failed to fetch scheduled runs: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
+
+@runs_bp.route('/<int:run_id>/tags', methods=['PUT'])
+@jwt_required()
+def update_run_tags(run_id):
+    try:
+        user_id_str = get_jwt_identity()
+        user_id = int(user_id_str) if isinstance(user_id_str, str) else user_id_str
+    except Exception as e:
+        response = jsonify({'error': 'Invalid or expired token', 'details': str(e)})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 401
+
+    run = Run.query.get(run_id)
+    if not run:
+        response = jsonify({'error': 'Run not found'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 404
+
+    if run.user_id != user_id:
+        response = jsonify({'error': 'You can only tag your own runs'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 403
+
+    data = request.get_json() or {}
+    scheduled_run_ids = data.get('scheduled_run_ids', [])
+    challenge_ids = data.get('challenge_ids', [])
+
+    if not isinstance(scheduled_run_ids, list):
+        scheduled_run_ids = []
+    if not isinstance(challenge_ids, list):
+        challenge_ids = []
+
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            response = jsonify({'error': 'User not found'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 404
+
+        # Clear existing tags
+        for scheduled_run in run.tagged_scheduled_runs.all():
+            run.tagged_scheduled_runs.remove(scheduled_run)
+        for challenge in run.tagged_challenges.all():
+            run.tagged_challenges.remove(challenge)
+
+        # Tag scheduled runs
+        for scheduled_run_id in scheduled_run_ids:
+            scheduled_run = ScheduledRun.query.get(scheduled_run_id)
+            if not scheduled_run:
+                continue
+            is_member = db.session.query(club_members).filter_by(
+                user_id=user_id, club_id=scheduled_run.club_id
+            ).first() is not None
+
+            if not is_member:
+                continue
+
+            run.tagged_scheduled_runs.append(scheduled_run)
+
+            activity = Activity(
+                club_id=scheduled_run.club_id,
+                user_id=user_id,
+                activity_type='run',
+                description=f'{user.name} ran {run.distance_km:.2f} km at {run.speed_kmh:.2f} km/h (tagged to scheduled run: {scheduled_run.title})'
+            )
+            db.session.add(activity)
+
+        # Tag challenges
+        if challenge_ids:
+            from app.models import Challenge, ChallengeParticipant
+            for challenge_id in challenge_ids:
+                challenge = Challenge.query.get(challenge_id)
+                if not challenge:
+                    continue
+                participant = ChallengeParticipant.query.filter_by(
+                    challenge_id=challenge_id,
+                    user_id=user_id
+                ).first()
+                if participant:
+                    run.tagged_challenges.append(challenge)
+
+        db.session.commit()
+
+        # Update challenge progress for tagged challenges
+        update_challenge_progress(user_id, challenge_ids)
+
+        tagged_scheduled_runs = [
+            {
+                'id': scheduled_run.id,
+                'title': scheduled_run.title,
+                'scheduled_date': format_date_as_ist(scheduled_run.scheduled_date),
+                'club_id': scheduled_run.club_id,
+                'club_name': scheduled_run.club.name if scheduled_run.club else None
+            }
+            for scheduled_run in run.tagged_scheduled_runs.all()
+        ]
+        tagged_challenges = [
+            {
+                'id': challenge.id,
+                'title': challenge.title
+            }
+            for challenge in run.tagged_challenges.all()
+        ]
+
+        response = jsonify({
+            'tagged_scheduled_runs': tagged_scheduled_runs,
+            'tagged_challenges': tagged_challenges
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = jsonify({'error': f'Failed to update run tags: {str(e)}'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
 
 @runs_bp.route('/schedule', methods=['POST'])
 @jwt_required()

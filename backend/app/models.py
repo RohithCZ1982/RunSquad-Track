@@ -59,6 +59,12 @@ run_challenges = db.Table('run_challenges',
     db.Column('challenge_id', db.Integer, db.ForeignKey('challenge.id'), primary_key=True)
 )
 
+# Association table for run-scheduled-run tagging
+run_scheduled_runs = db.Table('run_scheduled_runs',
+    db.Column('run_id', db.Integer, db.ForeignKey('run.id'), primary_key=True),
+    db.Column('scheduled_run_id', db.Integer, db.ForeignKey('scheduled_run.id'), primary_key=True)
+)
+
 class Run(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -71,6 +77,7 @@ class Run(db.Model):
     # Relationships for tagging
     tagged_clubs = db.relationship('Club', secondary=run_clubs, backref='tagged_runs', lazy='dynamic')
     tagged_challenges = db.relationship('Challenge', secondary=run_challenges, backref='tagged_runs', lazy='dynamic')
+    tagged_scheduled_runs = db.relationship('ScheduledRun', secondary=run_scheduled_runs, backref='tagged_runs', lazy='dynamic')
     
 class ScheduledRun(db.Model):
     id = db.Column(db.Integer, primary_key=True)

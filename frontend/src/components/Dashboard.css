@@ -857,6 +857,11 @@
   font-size: 14px;
 }
 
+.run-tags {
+  color: #374151;
+  font-size: 13px;
+}
+
 .run-actions {
   display: flex;
   gap: 8px;
@@ -869,6 +874,15 @@
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.tag-button {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.tag-button:hover {
+  background: #bae6fd;
 }
 
 .edit-button {

@@ -56,9 +56,12 @@ function Dashboard() {
   const [editingRun, setEditingRun] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [chartType, setChartType] = useState('distance');
-  const [selectedClubs, setSelectedClubs] = useState([]);
-  const [selectedChallenges, setSelectedChallenges] = useState([]);
   const [userChallenges, setUserChallenges] = useState([]);
+  const [scheduledRuns, setScheduledRuns] = useState([]);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [taggingRun, setTaggingRun] = useState(null);
+  const [tagScheduledRunIds, setTagScheduledRunIds] = useState([]);
+  const [tagChallengeIds, setTagChallengeIds] = useState([]);
 
   const fetchClubs = useCallback(async () => {
     try {
@@ -122,6 +125,15 @@ function Dashboard() {
     }
   }, [allClubs]);
 
+  const fetchScheduledRuns = useCallback(async () => {
+    try {
+      const response = await api.get('/runs/schedule/my');
+      setScheduledRuns(response.data);
+    } catch (err) {
+      console.error('Error fetching scheduled runs:', err);
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -147,8 +159,9 @@ function Dashboard() {
     if (activeTab === 'tracking') {
       fetchProgress();
       fetchUserChallenges();
+      fetchScheduledRuns();
     }
-  }, [activeTab, fetchProgress, fetchUserChallenges]);
+  }, [activeTab, fetchProgress, fetchUserChallenges, fetchScheduledRuns]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -176,9 +189,7 @@ function Dashboard() {
         distance_km: parseFloat(distance),
         duration_minutes: parseFloat(duration),
         notes: notes || undefined,
-        date: formattedDate || undefined,
-        club_ids: selectedClubs,
-        challenge_ids: selectedChallenges
+        date: formattedDate || undefined
       };
 
       if (editingRun) {
@@ -191,8 +202,6 @@ function Dashboard() {
       setDuration('');
       setNotes('');
       setDate('');
-      setSelectedClubs([]);
-      setSelectedChallenges([]);
       setShowManualForm(false);
       setEditingRun(null);
       fetchProgress();
@@ -203,14 +212,8 @@ function Dashboard() {
 
   const handleGPSSave = async (runData) => {
     try {
-      await api.post('/runs/track', {
-        ...runData,
-        club_ids: selectedClubs,
-        challenge_ids: selectedChallenges
-      });
+      await api.post('/runs/track', runData);
       setShowGPSTracker(false);
-      setSelectedClubs([]);
-      setSelectedChallenges([]);
       fetchProgress();
     } catch (err) {
       console.error('Error saving GPS run:', err);
@@ -220,8 +223,6 @@ function Dashboard() {
 
   const handleGPSCancel = () => {
     setShowGPSTracker(false);
-    setSelectedClubs([]);
-    setSelectedChallenges([]);
   };
 
   const handleEditRun = (run) => {
@@ -254,6 +255,46 @@ function Dashboard() {
     }
   };
 
+  const openTagModal = (run) => {
+    setTaggingRun(run);
+    setTagScheduledRunIds(run.tagged_scheduled_runs?.map((item) => item.id) || []);
+    setTagChallengeIds(run.tagged_challenges?.map((item) => item.id) || []);
+    setShowTagModal(true);
+  };
+
+  const handleSaveTags = async () => {
+    if (!taggingRun) return;
+
+    try {
+      const response = await api.put(`/runs/${taggingRun.id}/tags`, {
+        scheduled_run_ids: tagScheduledRunIds,
+        challenge_ids: tagChallengeIds
+      });
+      setRuns((prevRuns) =>
+        prevRuns.map((run) =>
+          run.id === taggingRun.id
+            ? {
+                ...run,
+                tagged_scheduled_runs: response.data.tagged_scheduled_runs,
+                tagged_challenges: response.data.tagged_challenges
+              }
+            : run
+        )
+      );
+      setShowTagModal(false);
+      setTaggingRun(null);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update tags');
+    }
+  };
+
+  const handleCloseTagModal = () => {
+    setShowTagModal(false);
+    setTaggingRun(null);
+    setTagScheduledRunIds([]);
+    setTagChallengeIds([]);
+  };
+
   const handleCancelForm = () => {
     setShowManualForm(false);
     setEditingRun(null);
@@ -261,8 +302,6 @@ function Dashboard() {
     setDuration('');
     setNotes('');
     setDate('');
-    setSelectedClubs([]);
-    setSelectedChallenges([]);
   };
 
   const getRecentRuns = () => {
@@ -619,48 +658,6 @@ function Dashboard() {
                       <small className="form-hint">Leave empty to use current date/time</small>
                     </div>
                     <div className="form-group">
-                      <label>Tag to Clubs (Optional)</label>
-                      <div className="checkbox-group">
-                        {userClubs.map(club => (
-                          <label key={club.id} className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={selectedClubs.includes(club.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedClubs([...selectedClubs, club.id]);
-                                } else {
-                                  setSelectedClubs(selectedClubs.filter(id => id !== club.id));
-                                }
-                              }}
-                            />
-                            {club.name}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Tag to Challenges (Optional)</label>
-                      <div className="checkbox-group">
-                        {userChallenges.map(challenge => (
-                          <label key={challenge.id} className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={selectedChallenges.includes(challenge.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedChallenges([...selectedChallenges, challenge.id]);
-                                } else {
-                                  setSelectedChallenges(selectedChallenges.filter(id => id !== challenge.id));
-                                }
-                              }}
-                            />
-                            {challenge.title}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-group">
                       <label>Notes (Optional)</label>
                       <textarea
                         placeholder="Add any notes about your run..."
@@ -746,8 +743,25 @@ function Dashboard() {
                       <p>Distance: {run.distance_km} km</p>
                       <p>Duration: {run.duration_minutes} minutes</p>
                       {run.notes && <p>Notes: {run.notes}</p>}
+                      {run.tagged_scheduled_runs && run.tagged_scheduled_runs.length > 0 && (
+                        <p className="run-tags">
+                          Scheduled Runs: {run.tagged_scheduled_runs.map((item) => item.title).join(', ')}
+                        </p>
+                      )}
+                      {run.tagged_challenges && run.tagged_challenges.length > 0 && (
+                        <p className="run-tags">
+                          Challenges: {run.tagged_challenges.map((item) => item.title).join(', ')}
+                        </p>
+                      )}
                     </div>
                     <div className="run-actions">
+                      <button
+                        className="tag-button"
+                        onClick={() => openTagModal(run)}
+                        title="Tag run"
+                      >
+                        🏷️
+                      </button>
                       <button 
                         className="edit-button"
                         onClick={() => handleEditRun(run)}
@@ -784,6 +798,73 @@ function Dashboard() {
                     <button type="button" onClick={handleDeleteRun} className="delete-confirm-button">
                       Delete
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showTagModal && taggingRun && (
+              <div className="modal-overlay" onClick={handleCloseTagModal}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <h2>Tag Run</h2>
+                  <p className="form-hint">Select scheduled runs and challenges for this run.</p>
+                  <div className="form-group">
+                    <label>Scheduled Runs</label>
+                    <div className="checkbox-group">
+                      {scheduledRuns.length === 0 ? (
+                        <p className="form-hint">No scheduled runs available.</p>
+                      ) : (
+                        scheduledRuns.map((scheduledRun) => (
+                          <label key={scheduledRun.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={tagScheduledRunIds.includes(scheduledRun.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setTagScheduledRunIds([...tagScheduledRunIds, scheduledRun.id]);
+                                } else {
+                                  setTagScheduledRunIds(
+                                    tagScheduledRunIds.filter((id) => id !== scheduledRun.id)
+                                  );
+                                }
+                              }}
+                            />
+                            {scheduledRun.title} ({scheduledRun.club_name})
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Challenges</label>
+                    <div className="checkbox-group">
+                      {userChallenges.length === 0 ? (
+                        <p className="form-hint">No active challenges available.</p>
+                      ) : (
+                        userChallenges.map((challenge) => (
+                          <label key={challenge.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={tagChallengeIds.includes(challenge.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setTagChallengeIds([...tagChallengeIds, challenge.id]);
+                                } else {
+                                  setTagChallengeIds(
+                                    tagChallengeIds.filter((id) => id !== challenge.id)
+                                  );
+                                }
+                              }}
+                            />
+                            {challenge.title}
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div className="modal-actions">
+                    <button type="button" onClick={handleCloseTagModal}>Cancel</button>
+                    <button type="button" onClick={handleSaveTags}>Save Tags</button>
                   </div>
                 </div>
               </div>
